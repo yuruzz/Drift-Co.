@@ -26,3 +26,5 @@ The Vercel API stores orders and notification settings in Upstash Redis because 
 Notification channels such as Telegram, Semaphore, Twilio, and webhooks are configured in Studio Mode after the deployment is connected to Redis.
 
 For ntfy order alerts, subscribe to the same topic in the ntfy app and enter either the topic name or its `https://ntfy.sh/<topic>` URL in Studio Mode. Use **Send Test Alert** to verify delivery.
+
+For sharing the catalog in Messenger, use `https://driftco-website.vercel.app/share/`. This page has a distinct canonical URL and social preview metadata, then redirects visitors to the catalog.
