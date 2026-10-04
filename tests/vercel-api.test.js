@@ -112,7 +112,9 @@ test('ntfy topics accept names or ntfy.sh URLs and reject unrelated URLs', () =>
 test('Messenger share page uses its own canonical URL and the public preview image', async () => {
   const html = await readFile(new URL('../public/share/index.html', import.meta.url), 'utf8');
   assert.match(html, /property="og:url" content="https:\/\/driftco-website\.vercel\.app\/share\/"/);
-  assert.match(html, /property="og:image" content="https:\/\/driftco-website\.vercel\.app\/preview-image\.jpg\?share=20261004"/);
+  assert.match(html, /property="og:image" content="https:\/\/driftco-website\.vercel\.app\/share-preview\.jpg"/);
+  assert.match(html, /property="og:image:width" content="1200"/);
+  assert.match(html, /property="og:image:height" content="630"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
 });
 
