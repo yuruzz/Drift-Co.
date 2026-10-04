@@ -75,6 +75,7 @@ interface NotificationSettings {
 interface SiteImagesData {
   hero?: string;
   partner?: string;
+  favicon?: string;
   products?: Record<string, string>;
 }
 
