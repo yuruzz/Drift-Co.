@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Standard Title & Description -->
+    <title>Drift & Co. | Fragrance Catalog</title>
+    <meta name="description" content="Explore our exclusive collection of luxury signature scents." />
+
+    <link rel="icon" type="image/jpeg" href="/logo.jfif?v=2">
+
+    <!-- Open Graph / Facebook / Messenger / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://drift-co.vercel.app/" />
+    <meta property="og:title" content="Drift & Co. | Fragrance Catalog" />
+    <meta property="og:description" content="Explore our exclusive collection of luxury signature scents." />
+    <meta property="og:image" content="https://drift-co.vercel.app/preview-image.jpg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://drift-co.vercel.app/" />
+    <meta name="twitter:title" content="Drift & Co. | Fragrance Catalog" />
+    <meta name="twitter:description" content="Explore our exclusive collection of luxury signature scents." />
+    <meta name="twitter:image" content="https://drift-co.vercel.app/preview-image.jpg" />
+    
+    <script>
+        // Suppress benign preview environment WebSocket notifications
+        window.addEventListener('unhandledrejection', function(event) {
+            if (event.reason && (String(event.reason).includes('WebSocket') || String(event.reason?.message).includes('WebSocket'))) {
+                event.preventDefault();
+            }
+        });
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN for complete standalone single-file compatibility -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            gold: '#C5A059',
+                            darkGold: '#9E7D3B',
+                            cream: '#FAF8F5',
+                            card: '#F4EFEA',
+                            charcoal: '#1A1817',
+                            muted: '#736E68'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', '-apple-system', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Modular Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="min-h-screen text-[#1A1817] selection:bg-[#C5A059] selection:text-white">
+
+    <!-- Main Navigation Header -->
+    <header class="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E8E2D8] transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            
+            <!-- Mobile Menu Toggle -->
+            <button id="mobileMenuBtn" class="lg:hidden p-2 text-stone-800 hover:text-black focus:outline-none" aria-label="Toggle menu">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+
+            <!-- Navigation Links Left -->
+            <nav class="hidden lg:flex items-center space-x-7 text-xs uppercase tracking-widest font-medium text-stone-700">
+                <a href="#about" class="nav-link hover:text-[#C5A059] py-1">Why Drift & Co.</a>
+                <a href="#collection" class="nav-link hover:text-[#C5A059] py-1">Fragrance Catalog</a>
+                <a href="#scent-finder" class="nav-link hover:text-[#C5A059] py-1">Olfactory Finder</a>
+                <a href="#partner" class="nav-link hover:text-[#C5A059] py-1">Business Partner</a>
+            </nav>
+
+            <!-- Brand Identity -->
+            <div class="text-center">
+                <a href="#" class="inline-block text-left sm:text-center group">
+                    <span class="block text-2xl sm:text-3xl font-cormorant font-medium tracking-[0.2em] text-[#1A1817] uppercase leading-tight">Drift & Co.</span>
+                    <span class="block text-[9px] uppercase tracking-[0.35em] text-[#9E7D3B] -mt-0.5">Since 2010 • Haute Parfumerie</span>
+                </a>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <a href="#partner" class="hidden sm:inline-flex items-center px-3.5 py-1.5 border border-[#C5A059] text-[11px] uppercase tracking-widest text-[#9E7D3B] hover:bg-[#C5A059] hover:text-white transition-all rounded-sm">
+                    Partner ₱988
+                </a>
+                <button id="openCartBtn" class="relative flex items-center space-x-2 text-xs uppercase tracking-widest font-medium text-[#1A1817] hover:text-[#C5A059] transition-colors py-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <span class="hidden sm:inline">Bag</span>
+                    <span id="cartCount" class="w-5 h-5 flex items-center justify-center bg-[#1A1817] text-white text-[10px] font-bold rounded-full">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobileMenu" class="fixed inset-x-0 top-20 z-30 bg-[#FAF8F5] border-b border-[#E8E2D8] p-6 shadow-xl hidden lg:hidden flex-col space-y-4 text-center">
+        <div class="flex items-center justify-center pb-2 border-b border-stone-200">
+            <span class="font-cormorant text-xl tracking-widest text-[#1A1817] uppercase font-medium">Drift & Co.</span>
+        </div>
+        <a href="#about" class="mobile-link text-sm uppercase tracking-widest py-2 border-b border-stone-200">Why Drift & Co.</a>
+        <a href="#collection" class="mobile-link text-sm uppercase tracking-widest py-2 border-b border-stone-200">Fragrance Catalog</a>
+        <a href="#scent-finder" class="mobile-link text-sm uppercase tracking-widest py-2 border-b border-stone-200">Olfactory Finder</a>
+        <a href="#partner" class="mobile-link text-sm uppercase tracking-widest py-2 border-b border-stone-200">Business Partner ₱988</a>
+        <div class="pt-2 text-xs text-[#736E68]">
+            Inquiries: <span class="font-semibold text-stone-800">09569310005</span> | drift&co2010@gmail.com
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="relative pt-12 pb-20 lg:py-28 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+                
+                <div class="lg:col-span-7 flex flex-col items-start space-y-6">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 bg-[#F3EEE7] border border-[#E8E2D8] rounded-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#C5A059]"></span>
+                        <span class="text-[11px] uppercase tracking-widest text-[#736E68] font-medium">30% High-Grade Fragrance Oil</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-cormorant font-light text-[#1A1817] leading-[1.12]">
+                        We Mix Our Own Perfumes. <br>
+                        <span class="italic font-normal text-[#9E7D3B]">World-Class Scent Artistry.</span>
+                    </h1>
+
+                    <p class="text-base sm:text-lg text-stone-600 font-light max-w-xl leading-relaxed">
+                        Started in 2010, Drift & Co. crafts long-lasting Eau de Parfum using 30% premium fragrance oils from the United States and Germany. Inspired by 100 celebrated global perfume houses, our sleek glass bottles offer true luxury designed for everyday use.
+                    </p>
+
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <a href="#collection" class="px-8 py-3.5 bg-[#1A1817] text-[#FAF8F5] text-xs uppercase tracking-widest font-medium hover:bg-[#C5A059] transition-all duration-300 shadow-sm rounded-sm">
+                            Explore Catalog (20 Editions)
+                        </a>
+                        <a href="#partner" class="px-8 py-3.5 border border-[#1A1817] text-[#1A1817] text-xs uppercase tracking-widest font-medium hover:bg-[#1A1817] hover:text-white transition-all duration-300 rounded-sm">
+                            Business Package ₱988
+                        </a>
+                    </div>
+
+                    <!-- Highlight Metrics from PDF -->
+                    <div class="grid grid-cols-3 gap-6 pt-6 border-t border-[#E8E2D8] w-full max-w-lg">
+                        <div>
+                            <span class="block font-cormorant text-2xl sm:text-3xl font-medium text-[#1A1817]">30%</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-500">Fragrance Oil</span>
+                        </div>
+                        <div>
+                            <span class="block font-cormorant text-2xl sm:text-3xl font-medium text-[#1A1817]">USA & DE</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-500">Oil Origins</span>
+                        </div>
+                        <div>
+                            <span class="block font-cormorant text-2xl sm:text-3xl font-medium text-[#1A1817]">100+</span>
+                            <span class="text-[11px] uppercase tracking-wider text-stone-500">Inspirations</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Imagery Matching Sleek Glass Bottle & Gold Cap -->
+                <div class="lg:col-span-5 relative">
+                    <div class="relative aspect-[4/5] rounded-sm overflow-hidden shadow-2xl bg-[#F3EEE7] border border-[#E8E2D8] group">
+                        <img 
+                            id="heroImg"
+                            src="/hero.jfif" 
+                            alt="Drift & Co. Sleek Glass Bottle with Gold Cap" 
+                            class="w-full h-full object-cover object-center rounded-sm transition-all duration-300"
+                            onerror="this.onerror=null;"
+                        >
+                        <!-- Change Hero Image Button (Hidden when published) -->
+                        <button onclick="triggerQuickUpload('hero')" class="edit-control absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-black/85 hover:bg-[#C5A059] text-white text-[10px] uppercase tracking-wider font-semibold rounded-xs backdrop-blur-xs transition-all shadow-md cursor-pointer" title="Upload your own hero picture">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span>Change Photo</span>
+                        </button>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
+                        <div class="absolute bottom-6 left-6 right-6 text-white pointer-events-none">
+                            <span class="text-[10px] uppercase tracking-widest text-[#C5A059] font-medium block">Signature Bottle</span>
+                            <p class="font-cormorant text-2xl font-light">Sleek & Classy Glass Bottles with Polished Gold Caps</p>
+                            <p class="text-xs text-stone-200 mt-1">Perfect for gifts and everyday affordable elegance.</p>
+                        </div>
+                    </div>
+                    <!-- Decorative Badge -->
+                    <div class="absolute -bottom-5 -left-5 bg-[#FAF8F5] border border-[#E8E2D8] p-4 shadow-lg hidden sm:block">
+                        <p class="text-[10px] uppercase tracking-widest text-stone-500">Formulated Since</p>
+                        <p class="font-cormorant text-xl font-semibold text-[#1A1817]">EST. 2010</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Narrative / Brand Story Section (From Page 1 of PDF) -->
+    <section id="about" class="py-20 bg-[#F3EEE7] border-y border-[#E8E2D8]">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <span class="text-xs uppercase tracking-widest-plus text-[#9E7D3B] font-semibold block mb-3">Brand Narrative</span>
+            <h2 class="text-3xl sm:text-4xl font-cormorant font-light text-[#1A1817] mb-8">
+                "Why Drift & Co.?"
+            </h2>
+            <div class="space-y-6 text-stone-700 text-base sm:text-lg font-light leading-relaxed">
+                <p>
+                    <strong class="font-medium text-stone-900">DRIFT & CO. started its humble beginning in 2010.</strong> We use only world-class and premium fragrance oils imported directly from the <strong>United States and Germany</strong>.
+                </p>
+                <p>
+                    We put <strong>30% fragrance oil</strong> (one of the highest concentrations in the market) into our perfumes, which makes the scents extraordinarily long-lasting.
+                </p>
+                <p>
+                    We offer inspiration scents from <strong>100 popular world-class brands</strong> so our consumers enjoy an expansive variety of scents to choose from. This is fundamentally different from cheap "imitations" and generic "Class A" perfume products.
+                </p>
+                <p>
+                    We mix our own perfumes and champion our own brand. Our bottles are sleek, classy, and perfect for gifts—all while remaining very affordable for everyday use.
+                </p>
+            </div>
+
+            <!-- Signature Callout -->
+            <div class="mt-10 pt-8 border-t border-[#E0D8CC] flex flex-col sm:flex-row items-center justify-center gap-6 text-xs uppercase tracking-widest text-stone-500">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    <span>30% Pure Oil Load</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    <span>Imported USA & German Oils</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    <span>Authentic Self-Blended Formulas</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Catalog Section -->
+    <section id="collection" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-[#E8E2D8] pb-6 gap-6">
+            <div>
+                <span class="text-xs uppercase tracking-widest-plus text-[#9E7D3B] font-semibold block mb-1">Official Catalog</span>
+                <h2 class="text-3xl sm:text-4xl font-cormorant font-light text-[#1A1817]">Featured Fragrances</h2>
+                <p class="text-stone-500 text-sm mt-1">20 Curated Editions • 40ml (₱380) & 50ml (₱450) • 30% Fragrance Oil</p>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search scent, notes, brand..." 
+                        class="w-full sm:w-64 pl-9 pr-4 py-2 text-xs bg-white border border-[#E8E2D8] rounded-sm focus:outline-none focus:border-[#C5A059]"
+                    >
+                    <svg class="w-4 h-4 text-stone-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+
+                <select id="genderFilter" class="px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-sm text-stone-700 focus:outline-none focus:border-[#C5A059]">
+                    <option value="all">All Genders</option>
+                    <option value="Men">For Men</option>
+                    <option value="Women">For Women</option>
+                    <option value="Unisex">Unisex</option>
+                </select>
+
+                <button onclick="openPhotoManager()" class="edit-control flex items-center justify-center gap-1.5 px-3 py-2 text-xs bg-[#FAF8F5] border border-[#E8E2D8] hover:border-[#1A1817] text-[#1A1817] font-medium rounded-sm transition-all shadow-xs cursor-pointer" title="Upload actual perfume photos from your device">
+                    <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Upload Bottle Photos</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Olfactory Category Pills -->
+        <div class="flex flex-wrap items-center gap-2 mb-10" id="categoryFilterBar">
+            <button class="cat-pill active px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#1A1817] bg-[#1A1817] text-white transition-all" data-category="all">
+                All Scents (20)
+            </button>
+            <button class="cat-pill px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#E8E2D8] bg-white text-stone-600 hover:border-[#1A1817] transition-all" data-category="citrus">
+                Citrus & Fresh
+            </button>
+            <button class="cat-pill px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#E8E2D8] bg-white text-stone-600 hover:border-[#1A1817] transition-all" data-category="aromatic">
+                Aromatic & Ocean
+            </button>
+            <button class="cat-pill px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#E8E2D8] bg-white text-stone-600 hover:border-[#1A1817] transition-all" data-category="woody">
+                Woody & Amber
+            </button>
+            <button class="cat-pill px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#E8E2D8] bg-white text-stone-600 hover:border-[#1A1817] transition-all" data-category="floral">
+                Floral & Powdery
+            </button>
+            <button class="cat-pill px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#E8E2D8] bg-white text-stone-600 hover:border-[#1A1817] transition-all" data-category="fruity">
+                Fruity & Sweet
+            </button>
+            <button class="cat-pill px-4 py-1.5 text-xs uppercase tracking-wider rounded-full border border-[#E8E2D8] bg-white text-stone-600 hover:border-[#1A1817] transition-all" data-category="vanilla">
+                Vanilla & Gourmand
+            </button>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="productGrid">
+            <!-- Injected via JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="noResults" class="hidden py-16 text-center">
+            <p class="text-stone-500 font-cormorant text-2xl">No fragrance matches your selection.</p>
+            <button onclick="resetFilters()" class="mt-4 px-5 py-2 text-xs uppercase tracking-widest border border-stone-800 hover:bg-stone-800 hover:text-white transition-all">Clear Filters</button>
+        </div>
+    </section>
+
+    <!-- Interactive Scent Finder Section -->
+    <section id="scent-finder" class="py-20 bg-[#F3EEE7] border-y border-[#E8E2D8]">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <span class="text-xs uppercase tracking-widest-plus text-[#9E7D3B] font-semibold block mb-2">Interactive Discovery</span>
+                <h2 class="text-3xl sm:text-4xl font-cormorant font-light text-[#1A1817]">Find Your Olfactory Match</h2>
+                <p class="text-stone-600 text-sm mt-2">Select your desired fragrance accord to instantly highlight its formulation notes and scent character.</p>
+            </div>
+
+            <!-- Accord Selectors -->
+            <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-12">
+                <button class="scent-tag-btn px-4 py-2 text-xs uppercase tracking-widest rounded-full bg-[#1A1817] text-white border border-[#1A1817] transition-all" onclick="selectFinderCategory('woody', this)">Woody & Amber</button>
+                <button class="scent-tag-btn px-4 py-2 text-xs uppercase tracking-widest rounded-full bg-white text-stone-700 border border-[#E8E2D8] hover:border-black transition-all" onclick="selectFinderCategory('citrus', this)">Vibrant Citrus</button>
+                <button class="scent-tag-btn px-4 py-2 text-xs uppercase tracking-widest rounded-full bg-white text-stone-700 border border-[#E8E2D8] hover:border-black transition-all" onclick="selectFinderCategory('vanilla', this)">Warm Vanilla & Coffee</button>
+                <button class="scent-tag-btn px-4 py-2 text-xs uppercase tracking-widest rounded-full bg-white text-stone-700 border border-[#E8E2D8] hover:border-black transition-all" onclick="selectFinderCategory('aromatic', this)">Oceanic Aromatic</button>
+                <button class="scent-tag-btn px-4 py-2 text-xs uppercase tracking-widest rounded-full bg-white text-stone-700 border border-[#E8E2D8] hover:border-black transition-all" onclick="selectFinderCategory('fruity', this)">Lush Fruity & Sweet</button>
+                <button class="scent-tag-btn px-4 py-2 text-xs uppercase tracking-widest rounded-full bg-white text-stone-700 border border-[#E8E2D8] hover:border-black transition-all" onclick="selectFinderCategory('powdery', this)">Velvety Powdery</button>
+            </div>
+
+            <!-- Featured Discovery Card -->
+            <div id="discoveryCard" class="bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-8 shadow-sm transition-all duration-300">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                    <div class="md:col-span-4 aspect-square rounded-sm overflow-hidden bg-[#F3EEE7]">
+                        <img id="discImg" src="/perfumes/Baccarat_Rouge.jfif" alt="Fragrance Discovery" class="w-full h-full object-cover">
+                    </div>
+                    <div class="md:col-span-8 flex flex-col justify-center space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span id="discCategory" class="text-[10px] uppercase tracking-widest px-2.5 py-0.5 bg-[#FAF8F5] border border-[#E8E2D8] text-[#9E7D3B] font-semibold">WOODY & AMBER ACCORD</span>
+                            <span id="discGender" class="text-[10px] uppercase tracking-widest text-stone-500 font-medium">Unisex</span>
+                        </div>
+                        <h3 id="discTitle" class="text-2xl sm:text-3xl font-cormorant font-normal text-[#1A1817]">Baccarat Rouge (Version of MFK)</h3>
+                        <p id="discPrice" class="text-[#C5A059] font-medium text-base">₱380.00 <span class="text-xs text-stone-400 font-normal">/ 40ml (50ml Deluxe ₱450.00)</span></p>
+                        <p id="discDesc" class="text-stone-600 text-sm leading-relaxed">
+                            A luminous, crystalline poetic alchemy of saffron blossoms, luminous jasmine petals, amberwood, and warm freshly cut cedarwood resin.
+                        </p>
+                        <div class="pt-2 border-t border-stone-100 text-xs text-stone-500">
+                            <span class="font-semibold text-stone-700">Olfactory Pyramid:</span>
+                            <span id="discNotes">Top: Saffron, Jasmine | Heart: Amberwood, Ambergris | Base: Fir Resin, Cedar</span>
+                        </div>
+                        <div class="pt-3 flex flex-wrap gap-4">
+                            <button id="discAddBtn" class="px-6 py-2.5 bg-[#1A1817] text-white text-xs uppercase tracking-widest font-medium hover:bg-[#C5A059] transition-colors rounded-sm cursor-pointer shadow-xs">
+                                Add 40ml to Bag — ₱380
+                            </button>
+                            <button id="discViewBtn" class="px-6 py-2.5 border border-stone-300 text-stone-700 text-xs uppercase tracking-widest font-medium hover:border-black transition-colors rounded-sm cursor-pointer">
+                                View Sizes & Notes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Partner Package Section (From Page 2 of PDF) -->
+    <section id="partner" class="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-[#1A1817] text-[#FAF8F5] rounded-sm p-8 sm:p-12 lg:p-16 relative overflow-hidden shadow-2xl">
+            <!-- Background accent -->
+            <div class="absolute -right-20 -top-20 w-96 h-96 bg-[#C5A059]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                <div class="lg:col-span-7 space-y-6">
+                    <span class="text-xs uppercase tracking-widest-plus text-[#C5A059] font-semibold block">Turn Passion Into Profit</span>
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-cormorant font-light leading-tight">
+                        Become a Drift & Co. <br>
+                        <span class="italic text-[#C5A059]">Business Partner</span>
+                    </h2>
+                    
+                    <div class="inline-block bg-white/10 px-5 py-2.5 rounded-sm border border-white/20">
+                        <span class="text-xs uppercase tracking-widest text-stone-300 block">Starter Package</span>
+                        <span class="text-3xl font-cormorant font-bold text-[#C5A059]">Php 988.00</span>
+                    </div>
+
+                    <div class="space-y-4 pt-2">
+                        <h4 class="text-xs uppercase tracking-widest text-[#C5A059] font-medium">Business Package Inclusions:</h4>
+                        <ul class="space-y-2 text-sm text-stone-300">
+                            <li class="flex items-center gap-3">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#C5A059]"></span>
+                                <span><strong>1pc 40ml Eau de Parfum</strong> (30% High-Grade Oil Concentration)</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#C5A059]"></span>
+                                <span><strong>Tester Set (10 pcs)</strong> — Choice of your preferred inspiration scents</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#C5A059]"></span>
+                                <span><strong>Official Scent List</strong> with complete notes and formulation guidance</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="space-y-4 pt-2">
+                        <h4 class="text-xs uppercase tracking-widest text-[#C5A059] font-medium">Our Winning Perks:</h4>
+                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-stone-300">
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                <span>Lifetime 15% – 40% discount</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                <span>Rebates on direct recruits</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                <span>Exclusive 10 + 1 Deals</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-[#C5A059]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                <span>Qualified for monthly promos</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="pt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                        <button onclick="openPartnerModal()" class="flex-shrink-0 inline-flex items-center justify-center px-5 sm:px-6 py-3.5 bg-[#C5A059] text-[#1A1817] font-semibold text-[11px] sm:text-xs uppercase tracking-widest hover:bg-white transition-all rounded-sm cursor-pointer shadow-sm whitespace-nowrap">
+                            Become a Partner — Starter Kit ₱988
+                        </button>
+                        <div class="flex-shrink-0 inline-flex items-center rounded-sm border border-white/30 bg-white/5 hover:border-[#C5A059] transition-all whitespace-nowrap">
+                            <a href="tel:09569310005" class="inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 text-white text-[11px] sm:text-xs uppercase tracking-widest hover:text-[#C5A059] transition-colors" title="Call Hotline (0956) 931-0005">
+                                <svg class="w-4 h-4 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                <span>Call (0956) 931 0005</span>
+                            </a>
+                            <span class="w-[1px] h-5 bg-white/20"></span>
+                            <button onclick="copyPartnerPhone()" class="px-3 py-3.5 text-stone-300 hover:text-[#C5A059] transition-colors cursor-pointer" title="Copy phone number to clipboard">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
+                            <span class="w-[1px] h-5 bg-white/20"></span>
+                            <a href="sms:09569310005?body=Hi%20Drift%20%26%20Co.%2C%20I'm%20interested%20in%20becoming%20a%20Business%20Partner%20(₱988%20Kit)!" class="px-3 py-3.5 text-stone-300 hover:text-[#C5A059] transition-colors" title="Send SMS Inquiry">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Package Visual Feature Card -->
+                <div class="lg:col-span-5 bg-white/5 border border-white/10 p-6 sm:p-8 rounded-sm relative group">
+                    <img 
+                        id="partnerImg"
+                        src="/partner.jfif" 
+                        alt="Drift and Co Business Partner Package" 
+                        class="w-full aspect-[4/3] object-cover rounded-sm mb-6 border border-white/10"
+                    >
+                    <!-- Change Partner Image Button (Hidden when published) -->
+                    <button onclick="triggerQuickUpload('partner')" class="edit-control absolute top-8 right-10 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-black/85 hover:bg-[#C5A059] text-white text-[10px] uppercase tracking-wider font-semibold rounded-xs backdrop-blur-xs transition-all shadow-md cursor-pointer" title="Upload your own partner package picture">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span>Change Photo</span>
+                    </button>
+                    <div class="space-y-3 text-xs text-stone-300">
+                        <p class="font-cormorant text-xl text-white">Direct Ambassador Support</p>
+                        <p class="leading-relaxed">Start your boutique perfume venture with proven bestsellers, premium oil longevity, and ready marketing assets.</p>
+                        <div class="pt-4 border-t border-white/10 flex items-center justify-between text-stone-400">
+                            <span>Facebook: Drift & Co.</span>
+                            <span>drift&co2010@gmail.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Craftsmanship & Quality Section (From PDF Data) -->
+    <section class="py-20 bg-[#FAF8F5]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="p-8 bg-white border border-[#E8E2D8] rounded-sm shadow-sm space-y-4">
+                    <span class="text-xs uppercase tracking-widest text-[#C5A059] font-semibold">01. 30% Oil Concentration</span>
+                    <h3 class="text-xl font-cormorant font-medium text-[#1A1817]">Unrivaled Longevity</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">
+                        While mainstream Eau de Toilette contains 8–12% oil, Drift & Co. infuses a 30% concentration of world-class fragrance oils, ensuring our perfumes last seamlessly from morning until evening.
+                    </p>
+                </div>
+
+                <div class="p-8 bg-white border border-[#E8E2D8] rounded-sm shadow-sm space-y-4">
+                    <span class="text-xs uppercase tracking-widest text-[#C5A059] font-semibold">02. USA & Germany Sourced</span>
+                    <h3 class="text-xl font-cormorant font-medium text-[#1A1817]">Master Ingredients</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">
+                        We source directly from accredited perfumery laboratories in Germany and the United States. Pure natural extracts, aged woods, and noble resins ensure a skin-safe, radiant scent experience.
+                    </p>
+                </div>
+
+                <div class="p-8 bg-white border border-[#E8E2D8] rounded-sm shadow-sm space-y-4">
+                    <span class="text-xs uppercase tracking-widest text-[#C5A059] font-semibold">03. Sleek & Classy Vessels</span>
+                    <h3 class="text-xl font-cormorant font-medium text-[#1A1817]">Gifting Perfection</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">
+                        Each 40ml and 50ml bottle features crystal-clear heavyweight glass, precision fine-mist atomizers, and a reflective gold cap. Truly luxurious presentation crafted to be remarkably affordable.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What People Say — Testimonials & Brand Trust Section -->
+    <section id="testimonials" class="py-24 bg-[#FAF8F5] border-t border-[#E8E2D8]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
+                <span class="text-xs uppercase tracking-[0.3em] text-[#9E7D3B] font-semibold block">Client Endorsements & Stories</span>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-cormorant font-normal text-[#1A1817]">What People Say</h2>
+                <div class="w-16 h-0.5 bg-[#C5A059] mx-auto my-3"></div>
+                <p class="text-stone-600 text-sm sm:text-base font-light leading-relaxed">
+                    Over a decade of crafting 30% fragrance oil Eau de Parfum. Discover firsthand impressions from collectors, everyday wearers, and boutique business partners across the Philippines.
+                </p>
+            </div>
+
+            <!-- Trust Scorecard Banner -->
+            <div class="bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-8 mb-12 shadow-sm">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-y md:divide-y-0 md:divide-x divide-stone-200">
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-center gap-1 text-[#C5A059] mb-1">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-cormorant font-bold text-[#1A1817]">4.9 / 5.0</p>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-500 font-medium">Over 2,400+ Bottles Rated</p>
+                    </div>
+                    <div class="space-y-1 pt-4 md:pt-0">
+                        <p class="text-2xl sm:text-3xl font-cormorant font-bold text-[#1A1817]">30%</p>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-500 font-medium">Certified Oil Ratio</p>
+                        <p class="text-[10px] text-[#9E7D3B]">10–14 Hr Skin & Fabric Sillage</p>
+                    </div>
+                    <div class="space-y-1 pt-4 md:pt-0">
+                        <p class="text-2xl sm:text-3xl font-cormorant font-bold text-[#1A1817]">98.4%</p>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-500 font-medium">Repeat Purchase Rate</p>
+                        <p class="text-[10px] text-[#9E7D3B]">Collectors & Gift Givers</p>
+                    </div>
+                    <div class="space-y-1 pt-4 md:pt-0">
+                        <p class="text-2xl sm:text-3xl font-cormorant font-bold text-[#1A1817]">100%</p>
+                        <p class="text-[11px] uppercase tracking-wider text-stone-500 font-medium">USA & Germany Oils</p>
+                        <p class="text-[10px] text-[#9E7D3B]">Zero Cheap Rubbing Alcohol</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-10">
+                <button onclick="filterReviews('all', this)" class="review-filter-btn px-4 py-1.5 text-xs uppercase tracking-widest rounded-full transition-all bg-[#1A1817] text-white border border-[#1A1817] cursor-pointer">
+                    All Reviews (6)
+                </button>
+                <button onclick="filterReviews('daily', this)" class="review-filter-btn px-4 py-1.5 text-xs uppercase tracking-widest rounded-full transition-all bg-white text-stone-700 border border-[#E8E2D8] hover:border-[#C5A059] cursor-pointer">
+                    Daily Wearers
+                </button>
+                <button onclick="filterReviews('longevity', this)" class="review-filter-btn px-4 py-1.5 text-xs uppercase tracking-widest rounded-full transition-all bg-white text-stone-700 border border-[#E8E2D8] hover:border-[#C5A059] cursor-pointer">
+                    Sillage & Longevity
+                </button>
+                <button onclick="filterReviews('partner', this)" class="review-filter-btn px-4 py-1.5 text-xs uppercase tracking-widest rounded-full transition-all bg-white text-stone-700 border border-[#E8E2D8] hover:border-[#C5A059] cursor-pointer">
+                    Reseller Partners
+                </button>
+            </div>
+
+            <!-- Review Cards Grid -->
+            <div id="reviewsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                
+                <!-- Review 1 -->
+                <div class="review-card bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow" data-category="longevity">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex text-[#C5A059]">
+                                <span class="text-sm">★★★★★</span>
+                            </div>
+                            <span class="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B] bg-[#FAF8F5] border border-[#E8E2D8] px-2 py-0.5 rounded-xs">
+                                Verified Buyer
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                            &ldquo;I was skeptical about inspiration scents until testing Drift & Co.’s Polosport. The opening is crisp with chilled mint and aldehydes without that harsh chemical rubbing-alcohol shock you get elsewhere. Spraying my collar before heading to work, it was still radiating past 8 PM. At ₱380, the longevity is extraordinary.&rdquo;
+                        </p>
+                    </div>
+                    <div class="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between text-xs">
+                        <div>
+                            <h4 class="font-cormorant text-base font-semibold text-[#1A1817]">Marco V.</h4>
+                            <p class="text-[11px] text-stone-400">Makati City • Polosport EDP</p>
+                        </div>
+                        <span class="text-[10px] text-[#C5A059] font-medium">12h+ Wear</span>
+                    </div>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="review-card bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow" data-category="daily">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex text-[#C5A059]">
+                                <span class="text-sm">★★★★★</span>
+                            </div>
+                            <span class="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B] bg-[#FAF8F5] border border-[#E8E2D8] px-2 py-0.5 rounded-xs">
+                                Verified Buyer
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                            &ldquo;The 30% oil concentration really shows in the cozy dry-down. I wear Vanilla Lace to client meetings and dinner dates, and I constantly get asked what boutique French house made it. It stays smooth, warm, and velvety without turning overly sweet or cloying in the Philippine weather.&rdquo;
+                        </p>
+                    </div>
+                    <div class="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between text-xs">
+                        <div>
+                            <h4 class="font-cormorant text-base font-semibold text-[#1A1817]">Camille R.</h4>
+                            <p class="text-[11px] text-stone-400">Quezon City • Vanilla Lace EDP</p>
+                        </div>
+                        <span class="text-[10px] text-[#C5A059] font-medium">Compliment Magnet</span>
+                    </div>
+                </div>
+
+                <!-- Review 3 -->
+                <div class="review-card bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow" data-category="partner">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex text-[#C5A059]">
+                                <span class="text-sm">★★★★★</span>
+                            </div>
+                            <span class="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-xs">
+                                Reseller Partner
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                            &ldquo;I ordered the ₱988 Business Partner starter kit out of curiosity for my boutique salon. Having the 10 vial testers on the counter made selling effortless—clients smell them while waiting and immediately want a bottle. I sold my initial 12 bottles within 5 days and have reordered three times since.&rdquo;
+                        </p>
+                    </div>
+                    <div class="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between text-xs">
+                        <div>
+                            <h4 class="font-cormorant text-base font-semibold text-[#1A1817]">Stephanie M.</h4>
+                            <p class="text-[11px] text-stone-400">Cebu City • ₱988 Partner Kit</p>
+                        </div>
+                        <span class="text-[10px] text-emerald-700 font-medium">Repeat Partner</span>
+                    </div>
+                </div>
+
+                <!-- Review 4 -->
+                <div class="review-card bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow" data-category="longevity">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex text-[#C5A059]">
+                                <span class="text-sm">★★★★★</span>
+                            </div>
+                            <span class="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B] bg-[#FAF8F5] border border-[#E8E2D8] px-2 py-0.5 rounded-xs">
+                                Verified Collector
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                            &ldquo;Their rendition of Extreme (Bvlgari) and Baccarat Rouge is phenomenal. The heavy crystal bottle feels satisfying in the hand, the gold cap snaps tightly, and the fine mist atomizer distributes an even cloud. The projection easily rivals original bottles costing ten times more.&rdquo;
+                        </p>
+                    </div>
+                    <div class="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between text-xs">
+                        <div>
+                            <h4 class="font-cormorant text-base font-semibold text-[#1A1817]">Derrick L.</h4>
+                            <p class="text-[11px] text-stone-400">BGC, Taguig • Extreme & Baccarat</p>
+                        </div>
+                        <span class="text-[10px] text-[#C5A059] font-medium">Heavyweight Glass</span>
+                    </div>
+                </div>
+
+                <!-- Review 5 -->
+                <div class="review-card bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow" data-category="daily">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex text-[#C5A059]">
+                                <span class="text-sm">★★★★★</span>
+                            </div>
+                            <span class="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B] bg-[#FAF8F5] border border-[#E8E2D8] px-2 py-0.5 rounded-xs">
+                                Verified Buyer
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                            &ldquo;As someone with sensitive skin, synthetic fragrances usually cause irritation or headaches. Drift & Co. uses genuine US & German imported perfume oils, and the difference is obvious—pure, skin-friendly, and very natural. English Pear & Freesia is my signature daily scent now.&rdquo;
+                        </p>
+                    </div>
+                    <div class="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between text-xs">
+                        <div>
+                            <h4 class="font-cormorant text-base font-semibold text-[#1A1817]">Dr. Patricia E.</h4>
+                            <p class="text-[11px] text-stone-400">Davao City • English Pear EDP</p>
+                        </div>
+                        <span class="text-[10px] text-[#C5A059] font-medium">Skin Safe & Pure</span>
+                    </div>
+                </div>
+
+                <!-- Review 6 -->
+                <div class="review-card bg-white border border-[#E8E2D8] rounded-sm p-6 sm:p-7 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow" data-category="daily">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex text-[#C5A059]">
+                                <span class="text-sm">★★★★★</span>
+                            </div>
+                            <span class="inline-flex items-center text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B] bg-[#FAF8F5] border border-[#E8E2D8] px-2 py-0.5 rounded-xs">
+                                Verified Buyer
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-stone-700 leading-relaxed italic">
+                            &ldquo;Ordered two bottles on Monday, received them safely wrapped in bubble cushion in Iloilo by Thursday. Crisp scents, great sillage for our coastal breeze, and wonderful customer service on Facebook and SMS. Will definitely order the discovery set for my brother’s graduation.&rdquo;
+                        </p>
+                    </div>
+                    <div class="pt-5 mt-5 border-t border-stone-100 flex items-center justify-between text-xs">
+                        <div>
+                            <h4 class="font-cormorant text-base font-semibold text-[#1A1817]">Capt. Ronald B.</h4>
+                            <p class="text-[11px] text-stone-400">Iloilo City • Acqua Di Gio & Sauvage</p>
+                        </div>
+                        <span class="text-[10px] text-[#C5A059] font-medium">Fast Shipping</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Brand Trust Guarantee Callout -->
+            <div class="mt-14 bg-gradient-to-r from-[#1A1817] via-[#2A2624] to-[#1A1817] text-[#FAF8F5] p-8 sm:p-10 rounded-sm border border-stone-700 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
+                <div class="space-y-2 text-center md:text-left">
+                    <span class="text-xs uppercase tracking-[0.25em] text-[#C5A059] font-semibold block">The Drift & Co. Promise</span>
+                    <h3 class="text-2xl sm:text-3xl font-cormorant font-normal">Authentic Perfume Oil Quality You Can Trust</h3>
+                    <p class="text-xs sm:text-sm text-stone-300 max-w-xl font-light">
+                        Every bottle is formulated fresh with 30% oil concentration imported from the US and Germany. If you're not captivated by the projection and olfactory note fidelity, contact our team directly for dedicated personal support.
+                    </p>
+                </div>
+                <div class="flex items-center gap-4 flex-shrink-0 flex-wrap justify-center">
+                    <a href="#collection" class="px-6 py-3 bg-[#C5A059] text-[#1A1817] text-xs uppercase tracking-widest font-semibold hover:bg-white transition-colors rounded-sm shadow-sm">
+                        Explore Catalog
+                    </a>
+                    <button onclick="openOrderTracker()" class="px-5 py-3 bg-stone-800 text-[#C5A059] hover:text-white border border-[#C5A059]/40 hover:border-[#C5A059] text-xs uppercase tracking-widest transition-colors rounded-sm cursor-pointer flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Track Order</span>
+                    </button>
+                    <a href="tel:09569310005" class="px-5 py-3 border border-stone-500 text-stone-200 text-xs uppercase tracking-widest hover:border-white transition-colors rounded-sm">
+                        Inquire Direct
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Homepage Order Tracking Banner Section -->
+    <section id="track-order-section" class="py-14 bg-[#F5EFE6] border-t border-[#E8E2D8]">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 bg-white border border-[#E8E2D8] rounded-full mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-[10px] uppercase tracking-widest text-[#9E7D3B] font-semibold">Live Courier & Atelier Dispatch Tracking</span>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-cormorant font-light text-[#1A1817] mb-2">Track Your Fragrance Parcel</h2>
+            <p class="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto mb-6 font-light leading-relaxed">
+                Hand-blended with 30% oil concentration in our atelier. Enter your Order Reference ID (e.g. <span class="font-mono font-semibold text-stone-800">DRFT-444818</span>) or the mobile number provided at checkout.
+            </p>
+
+            <div class="bg-white p-5 sm:p-7 rounded-sm shadow-md border border-[#E8E2D8] max-w-xl mx-auto text-left">
+                <form onsubmit="handleSectionTrackSubmit(event)" class="space-y-3">
+                    <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold">
+                        Enter Order ID or Mobile Number
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="relative flex-1">
+                            <input 
+                                type="text" 
+                                id="sectionTrackInput" 
+                                placeholder="e.g. DRFT-444818 or 09181234567" 
+                                class="w-full pl-9 pr-3 py-3 text-xs bg-[#FAF8F5] border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059] font-mono text-stone-900"
+                                required
+                            >
+                            <svg class="w-4 h-4 text-stone-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <button type="submit" class="px-6 py-3 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-semibold transition-colors rounded-xs cursor-pointer shadow-sm flex items-center justify-center gap-1.5 flex-shrink-0">
+                            <svg class="w-4 h-4 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                            <span>Track Parcel</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-4 pt-3.5 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500 flex-wrap gap-2">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>NCR: 1–3 business days • Provincial: 3–5 days</span>
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] uppercase font-semibold text-stone-400">Samples:</span>
+                        <button type="button" onclick="quickTrackOrder('DRFT-444818')" class="text-[#C5A059] hover:underline font-mono text-[10px]">#DRFT-444818</button>
+                        <span class="text-stone-300">•</span>
+                        <button type="button" onclick="quickTrackOrder('DRFT-973766')" class="text-[#C5A059] hover:underline font-mono text-[10px]">#DRFT-973766</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#1A1817] text-[#FAF8F5] pt-16 pb-12 border-t border-stone-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-stone-800">
+                <div class="md:col-span-5 space-y-4">
+                    <span class="text-2xl font-cormorant uppercase tracking-widest block font-medium">Drift & Co.</span>
+                    <p class="text-xs text-stone-400 max-w-sm leading-relaxed">
+                        Crafting world-class 30% fragrance oil perfumes since 2010. Hand-compounded with oils imported from the USA and Germany. 100+ inspiration editions.
+                    </p>
+                    <div class="pt-2 text-xs text-stone-400 space-y-1">
+                        <p>📍 Philippines • Nationwide Shipping</p>
+                        <p>📞 Contact: <a href="tel:09569310005" class="text-[#C5A059] hover:underline">09569310005</a></p>
+                        <p>✉️ Email: <a href="mailto:drift&co2010@gmail.com" class="text-[#C5A059] hover:underline">drift&co2010@gmail.com</a></p>
+                        <p>📘 Facebook: <span class="text-stone-200">Drift & Co.</span></p>
+                    </div>
+                </div>
+
+                <div class="md:col-span-3 space-y-3">
+                    <span class="text-xs uppercase tracking-widest text-[#C5A059] font-semibold block">Customer Care</span>
+                    <ul class="space-y-2 text-xs text-stone-400">
+                        <li>
+                            <button onclick="openOrderTracker()" class="text-[#C5A059] hover:underline flex items-center gap-1.5 font-medium cursor-pointer">
+                                <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                <span>Track Order with Order ID</span>
+                            </button>
+                        </li>
+                        <li><a href="#collection" class="hover:text-white transition-colors">Citrus & Fresh Blends</a></li>
+                        <li><a href="#collection" class="hover:text-white transition-colors">Woody & Amber Accords</a></li>
+                        <li><a href="#collection" class="hover:text-white transition-colors">Vanilla & Sweet Gourmands</a></li>
+                        <li><a href="#collection" class="hover:text-white transition-colors">Aromatic & Oceanic Notes</a></li>
+                        <li><a href="#collection" class="hover:text-white transition-colors">Floral & Powdery Scents</a></li>
+                    </ul>
+                </div>
+
+                <div class="md:col-span-4 space-y-4">
+                    <span class="text-xs uppercase tracking-widest text-[#C5A059] font-semibold block">Partner Inquiries</span>
+                    <p class="text-xs text-stone-400 leading-relaxed">
+                        Interested in becoming a reseller or ambassador? Get our complete Php988.00 Starter Kit with 50ml EDP, 10 testers, and catalog.
+                    </p>
+                    <button onclick="openPartnerModal()" class="w-full py-2.5 bg-[#C5A059] text-[#1A1817] font-semibold text-xs uppercase tracking-widest hover:bg-white transition-colors rounded-sm cursor-pointer shadow-sm">
+                        Inquire Business Package ₱988
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-stone-500 gap-4">
+                <p>&copy; 2010–2026 Drift & Co. Parfums. All Rights Reserved.</p>
+                <div class="edit-control flex items-center gap-3">
+                    <button onclick="openOrdersDashboard('payments')" class="hover:text-[#C5A059] transition-colors cursor-pointer flex items-center gap-1">
+                        <span>💳 Bank & Payment Accounts</span>
+                    </button>
+                    <span>•</span>
+                    <button onclick="openOrdersDashboard('orders')" class="hover:text-[#C5A059] transition-colors cursor-pointer">
+                        <span>Store Concierge</span>
+                    </button>
+                </div>
+                <p>Formulated with 30% Fragrance Oils from USA & Germany.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Side Cart Drawer -->
+    <div id="cartOverlay" class="cart-overlay fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closeCart()"></div>
+    <aside id="cartDrawer" class="cart-drawer fixed top-0 right-0 w-full max-w-md h-full bg-[#FAF8F5] z-50 transform translate-x-full shadow-2xl flex flex-col transition-transform duration-300 border-l border-[#E8E2D8]">
+        <div class="p-6 border-b border-[#E8E2D8] flex items-center justify-between">
+            <div>
+                <span class="text-xs uppercase tracking-widest font-semibold text-[#9E7D3B]">Your Shopping Bag</span>
+                <h3 class="text-xl font-cormorant font-normal text-[#1A1817]">Drift & Co. Selections</h3>
+            </div>
+            <button onclick="closeCart()" class="text-2xl text-stone-500 hover:text-black p-1">&times;</button>
+        </div>
+
+        <div id="cartItems" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <!-- Dynamic cart items -->
+        </div>
+
+        <div class="p-6 border-t border-[#E8E2D8] bg-[#F3EEE7] space-y-4">
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-stone-600">Total Items:</span>
+                <span id="cartTotalItems" class="font-semibold text-stone-900">0</span>
+            </div>
+            <div class="flex items-center justify-between text-base">
+                <span class="font-cormorant text-xl text-stone-900">Subtotal:</span>
+                <span id="cartSubtotal" class="font-semibold text-[#C5A059] text-xl">₱0.00</span>
+            </div>
+            <p class="text-[11px] text-stone-500 text-center">Formulated with 30% fragrance oil • Free delivery for orders above ₱1,500</p>
+            <button onclick="proceedToCheckout()" class="w-full py-3.5 bg-[#1A1817] text-[#FAF8F5] text-xs uppercase tracking-widest font-medium hover:bg-[#C5A059] transition-all rounded-sm shadow-sm">
+                Proceed to Checkout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Quick View & Scent Notes Modal -->
+    <div id="quickModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closeModal(event)">
+        <div class="bg-white max-w-2xl w-full rounded-sm overflow-hidden shadow-2xl border border-[#E8E2D8] relative max-h-[90vh] flex flex-col md:flex-row">
+            <button onclick="closeModalDirect()" class="absolute top-3 right-4 z-10 text-2xl text-stone-400 hover:text-black">&times;</button>
+            
+            <!-- Modal Image with Upload Action -->
+            <div class="md:w-5/12 bg-[#F3EEE7] aspect-square md:aspect-auto flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-[#E8E2D8]">
+                <div class="relative flex-1 bg-stone-100 overflow-hidden flex items-center justify-center">
+                    <img id="modalImg" src="" alt="Perfume Preview" class="w-full h-full object-cover">
+                    <div id="modalCustomBadge" class="edit-control absolute top-2 left-2 hidden px-2 py-0.5 bg-black/80 text-[#C5A059] text-[9px] uppercase tracking-wider font-semibold rounded-xs backdrop-blur-xs">
+                        Custom Bottle Photo
+                    </div>
+                </div>
+                <div class="edit-control p-2.5 bg-[#FAF8F5] border-t border-[#E8E2D8] flex items-center justify-between gap-1.5">
+                    <button onclick="triggerModalUpload()" class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-stone-900 hover:bg-[#C5A059] text-white text-[10px] uppercase tracking-wider font-medium rounded-xs transition-colors shadow-xs cursor-pointer">
+                        <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>Upload Photo</span>
+                    </button>
+                    <button onclick="promptImageUrl(currentModalProductId)" class="px-2.5 py-1.5 bg-white border border-[#E8E2D8] hover:border-black text-stone-800 text-[10px] uppercase tracking-wider font-medium rounded-xs transition-colors cursor-pointer" title="Paste Image URL or web link">
+                        Link URL
+                    </button>
+                    <button id="modalResetImgBtn" onclick="resetCurrentProductImage()" class="px-2 py-1.5 text-[10px] uppercase text-stone-500 hover:text-red-600 transition-colors hidden cursor-pointer" title="Restore default image">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="md:w-7/12 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto space-y-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="modalCategory" class="text-[10px] uppercase tracking-widest px-2 py-0.5 bg-[#FAF8F5] border border-[#E8E2D8] text-[#9E7D3B] font-semibold">AROMATIC</span>
+                        <span id="modalGender" class="text-[10px] uppercase tracking-widest text-stone-400 font-medium">Men</span>
+                    </div>
+
+                    <h3 id="modalTitle" class="text-2xl sm:text-3xl font-cormorant font-normal text-[#1A1817]">Fragrance Name</h3>
+                    <p id="modalInspiration" class="text-xs text-stone-500 italic mb-2">Version of Ralph Lauren</p>
+                    
+                    <div class="flex items-baseline gap-3 my-1">
+                        <span id="modalPrice" class="text-xl font-semibold text-[#C5A059]">₱380.00</span>
+                        <span id="modalVolumeLabel" class="text-xs text-stone-500">40ml Eau de Parfum (30% Oil)</span>
+                    </div>
+
+                    <!-- Size Selector in Modal -->
+                    <div class="my-2.5 space-y-1.5 bg-[#FAF8F5] p-2.5 rounded-xs border border-[#E8E2D8]">
+                        <label class="block text-[10px] uppercase tracking-wider font-semibold text-stone-700">Choose Bottle Size:</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="modalSizeBtn40ml" onclick="selectModalSize('40ml')" class="flex-1 py-1.5 px-3 border border-[#1A1817] bg-[#1A1817] text-white text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer shadow-xs">
+                                <span>40ml Edition</span>
+                                <span class="font-mono text-[#C5A059]">₱380</span>
+                            </button>
+                            <button type="button" id="modalSizeBtn50ml" onclick="selectModalSize('50ml')" class="flex-1 py-1.5 px-3 border border-stone-300 bg-white hover:border-black text-stone-800 text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer">
+                                <span>50ml Deluxe</span>
+                                <span class="font-mono text-[#C5A059]">₱450</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <p id="modalDesc" class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                        Fragrance description goes here.
+                    </p>
+
+                    <!-- Pyramid Notes Breakdown -->
+                    <div class="mt-4 pt-4 border-t border-stone-100 space-y-2">
+                        <span class="text-[10px] uppercase tracking-widest text-[#9E7D3B] font-semibold block">Olfactory Pyramid</span>
+                        <div class="text-xs text-stone-600 space-y-1">
+                            <p><strong class="text-stone-800 font-medium">Top Notes:</strong> <span id="modalTopNotes">-</span></p>
+                            <p><strong class="text-stone-800 font-medium">Heart Notes:</strong> <span id="modalHeartNotes">-</span></p>
+                            <p><strong class="text-stone-800 font-medium">Base Notes:</strong> <span id="modalBaseNotes">-</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-stone-100 flex gap-3">
+                    <button id="modalAddBtn" class="flex-1 py-3 bg-[#1A1817] text-white text-xs uppercase tracking-widest font-medium hover:bg-[#C5A059] transition-all rounded-sm">
+                        Add to Bag — ₱380
+                    </button>
+                    <button onclick="closeModalDirect()" class="px-4 py-3 border border-stone-300 text-stone-700 text-xs uppercase tracking-widest hover:border-black transition-all rounded-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Photo Manager Modal -->
+    <div id="photoManagerModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closePhotoManager(event)">
+        <div class="bg-white max-w-3xl w-full rounded-sm overflow-hidden shadow-2xl border border-[#E8E2D8] relative max-h-[90vh] flex flex-col">
+            <div class="p-5 border-b border-[#E8E2D8] flex items-center justify-between bg-[#FAF8F5]">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-cormorant text-2xl font-normal text-[#1A1817]">Picture Box & Photo Manager</h3>
+                        <span class="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 bg-[#C5A059]/15 text-[#9E7D3B] border border-[#C5A059]/30 rounded-xs">100% Reliable In-App Storage</span>
+                    </div>
+                    <p class="text-xs text-stone-500 mt-1">Upload your actual photos into any picture box on the site. All images are kept permanently when you publish.</p>
+                </div>
+                <button onclick="closePhotoManagerDirect()" class="text-2xl text-stone-400 hover:text-black leading-none cursor-pointer">&times;</button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto flex-1 space-y-4">
+                <!-- Publishing Mode Callout -->
+                <div class="p-4 bg-stone-900 text-white rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs border border-stone-800">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span class="text-[#C5A059] uppercase tracking-wider font-semibold text-[10px]">Publishing Your Site</span>
+                        </div>
+                        <p class="text-stone-300 text-xs mt-1">
+                            When you publish, all "Upload Bottle Photos" and camera buttons disappear completely for visitors, while <strong>all your uploaded photos remain on the site</strong>.
+                        </p>
+                    </div>
+                    <button id="modalPublishToggleBtn" onclick="togglePublishFromModal()" class="px-4 py-2 bg-[#C5A059] hover:bg-[#d6b26b] text-stone-950 font-bold rounded-xs uppercase tracking-wider text-[11px] transition-colors cursor-pointer flex-shrink-0">
+                        🚀 Switch to Published View
+                    </button>
+                </div>
+
+                <!-- Tabs: Fragrances vs Page Pictures -->
+                <div class="flex items-center gap-2 border-b border-[#E8E2D8] pb-2">
+                    <button id="tabFragrancesBtn" onclick="switchManagerTab('fragrances')" class="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border-b-2 border-[#1A1817] text-[#1A1817] transition-all cursor-pointer">
+                        Perfume Bottles (20)
+                    </button>
+                    <button id="tabPagePicturesBtn" onclick="switchManagerTab('page')" class="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-black border-b-2 border-transparent transition-all cursor-pointer">
+                        Hero, Partner & Tab Icon (3)
+                    </button>
+                </div>
+
+                <!-- Tab 1: 20 Perfume Bottles -->
+                <div id="photoManagerList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[46vh] overflow-y-auto pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- Tab 2: Hero & Business Partner Picture Boxes -->
+                <div id="photoManagerPageList" class="hidden grid-cols-1 sm:grid-cols-2 gap-4 max-h-[46vh] overflow-y-auto pr-1">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-[#E8E2D8] bg-[#FAF8F5] flex items-center justify-between flex-wrap gap-2">
+                <button onclick="resetAllCustomImages()" class="text-xs text-stone-500 hover:text-red-600 transition-colors cursor-pointer">
+                    Reset All to Defaults
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="exportBakedCode()" class="px-3.5 py-2 bg-white border border-stone-300 hover:border-black text-stone-800 text-xs uppercase tracking-wider rounded-xs transition-colors cursor-pointer" title="Export baked HTML or copy image code">
+                        📋 Export / Bake Code
+                    </button>
+                    <button onclick="closePhotoManagerDirect()" class="px-5 py-2 bg-[#1A1817] text-white text-xs uppercase tracking-wider hover:bg-[#C5A059] rounded-xs transition-colors cursor-pointer">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closeCheckoutModal(event)">
+        <div class="bg-white max-w-lg w-full rounded-sm overflow-hidden shadow-2xl border border-[#E8E2D8] relative max-h-[92vh] flex flex-col">
+            <div class="p-5 border-b border-[#E8E2D8] flex items-center justify-between bg-[#FAF8F5]">
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-[#9E7D3B] font-semibold block">Secure Checkout</span>
+                    <h3 class="font-cormorant text-2xl font-normal text-[#1A1817]">Complete Your Order</h3>
+                </div>
+                <button onclick="closeCheckoutModalDirect()" class="text-2xl text-stone-400 hover:text-black leading-none cursor-pointer">&times;</button>
+            </div>
+
+            <div id="checkoutFormContainer" class="p-6 overflow-y-auto space-y-4">
+                <!-- Order Summary Banner -->
+                <div class="bg-[#F3EEE7] p-3.5 rounded-sm border border-[#E8E2D8] flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-stone-600 block" id="checkoutItemCount">0 items in bag</span>
+                        <span class="text-[11px] text-stone-500">30% High-Grade Fragrance Oil Concentration</span>
+                    </div>
+                    <span id="checkoutTotalAmount" class="text-lg font-cormorant font-bold text-[#C5A059]">₱0.00</span>
+                </div>
+
+                <!-- Form -->
+                <form id="checkoutForm" onsubmit="submitCheckoutOrder(event)" class="space-y-3.5">
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="orderCustomerName" required placeholder="e.g. Maria Santos" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Mobile Number <span class="text-red-500">*</span></label>
+                            <input type="tel" id="orderPhone" required placeholder="0917 123 4567" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Payment Method <span class="text-red-500">*</span></label>
+                            <select id="orderPaymentMethod" onchange="handlePaymentMethodChange()" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059] font-medium text-stone-900">
+                                <option value="Cash on Delivery (COD)" selected>Cash on Delivery (COD) — Available</option>
+                                <option value="GCash" disabled class="text-stone-400">GCash (Currently Unavailable)</option>
+                                <option value="BPI Bank Transfer" disabled class="text-stone-400">BPI Bank Transfer (Currently Unavailable)</option>
+                                <option value="BDO Bank Transfer" disabled class="text-stone-400">BDO Bank Transfer (Currently Unavailable)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Bank Payment Details Panel -->
+                    <div id="bankPaymentInfoBox" class="p-3 bg-[#FAF8F5] border border-[#E8E2D8] rounded-xs text-xs space-y-2">
+                        <!-- Populated by handlePaymentMethodChange() -->
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Delivery Address <span class="text-red-500">*</span></label>
+                        <textarea id="orderAddress" required rows="2" placeholder="Street, Barangay, City, Province, Zip code" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]"></textarea>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" id="submitOrderBtn" class="w-full py-3.5 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-semibold transition-all rounded-xs shadow-md cursor-pointer flex items-center justify-center gap-2">
+                            <span>Confirm & Place Order</span>
+                        </button>
+                        <p class="text-[10px] text-stone-400 text-center mt-2">Zero advance risk for COD. Our concierge contacts you for dispatch confirmation.</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Success Confirmation View -->
+            <div id="checkoutSuccessView" class="hidden p-6 sm:p-8 text-center space-y-4">
+                <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-xs">✓</div>
+                <div>
+                    <h3 class="font-cormorant text-3xl font-light text-stone-900">Order Confirmed!</h3>
+                    <p class="text-xs text-stone-500 mt-1">Notification & order receipt dispatched</p>
+                </div>
+
+                <!-- Instant Notification Status Banner -->
+                <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] p-2.5 rounded-xs flex items-center justify-center gap-2 max-w-sm mx-auto">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="successNotificationStatus">Alert dispatched to store concierge & SMS dispatch hub</span>
+                </div>
+
+                <!-- Order Details Card -->
+                <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs text-xs space-y-2 text-left max-w-sm mx-auto">
+                    <div class="flex justify-between border-b border-stone-200 pb-2">
+                        <span class="text-stone-500">Order Reference:</span>
+                        <strong id="successOrderId" class="text-[#C5A059] font-mono text-sm">DRFT-123456</strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500">Recipient:</span>
+                        <span id="successCustomerName" class="font-medium">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500">Phone:</span>
+                        <span id="successCustomerPhone" class="font-mono text-stone-700">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500">Delivery Address:</span>
+                        <span id="successAddress" class="text-right text-stone-700 max-w-[200px] truncate">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500">Total Payable:</span>
+                        <span id="successTotal" class="font-bold text-stone-900">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500">Payment:</span>
+                        <span id="successPaymentMethod" class="text-stone-700">-</span>
+                    </div>
+                    <div id="successPaymentRefRow" class="hidden flex justify-between">
+                        <span class="text-stone-500">Your Ref / Txn ID:</span>
+                        <span id="successPaymentRef" class="font-mono text-stone-800 font-semibold">-</span>
+                    </div>
+                    <div id="successBankDetailsBox" class="hidden mt-2 p-3 bg-white border border-[#E8E2D8] rounded-xs text-[11px] text-left space-y-1.5">
+                        <!-- Populated with BPI/BDO/GCash transfer summary -->
+                    </div>
+                </div>
+
+                <!-- 1-Click Send Details to Customer & Store -->
+                <div class="max-w-sm mx-auto space-y-2 pt-1">
+                    <!-- Prominent Track This Order Live CTA -->
+                    <button onclick="openOrderTracker(window.lastOrderDetails ? window.lastOrderDetails.id : ''); closeCheckoutModalDirect();" class="w-full py-2.5 px-4 bg-[#C5A059] hover:bg-[#d6b26b] text-stone-950 font-bold text-xs uppercase tracking-wider rounded-xs transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4 text-stone-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        <span>Track This Order Live</span>
+                    </button>
+
+                    <p class="text-[11px] uppercase tracking-wider text-stone-500 font-semibold text-center pt-1">Send receipt to phone</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="sendSuccessViaSMS()" class="py-2.5 px-3 bg-[#1A1817] hover:bg-[#C5A059] text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+                            <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                            <span>Open SMS</span>
+                        </button>
+                        <button onclick="sendSuccessViaWhatsApp()" class="py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                            <span>WhatsApp</span>
+                        </button>
+                    </div>
+                    <button onclick="copySuccessOrderSummary()" class="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-medium rounded-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                        <svg class="w-3 h-3 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <span>Copy Full Receipt to Clipboard</span>
+                    </button>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="closeCheckoutModalDirect()" class="px-8 py-2.5 bg-stone-900 hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-medium rounded-xs transition-colors cursor-pointer">
+                        Continue Shopping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Partner Inquiry Modal -->
+    <div id="partnerModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closePartnerModal(event)">
+        <div class="bg-white max-w-lg w-full rounded-sm overflow-hidden shadow-2xl border border-[#E8E2D8] relative max-h-[92vh] flex flex-col">
+            <div class="p-5 border-b border-[#E8E2D8] flex items-center justify-between bg-[#1A1817] text-white">
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-[#C5A059] font-semibold block">Reseller Program</span>
+                    <h3 class="font-cormorant text-2xl font-light">Join Drift & Co. — Starter Kit ₱988</h3>
+                </div>
+                <button onclick="closePartnerModalDirect()" class="text-2xl text-stone-400 hover:text-white leading-none cursor-pointer">&times;</button>
+            </div>
+
+            <div id="partnerFormContainer" class="p-6 overflow-y-auto space-y-4">
+                <div class="bg-[#FAF8F5] p-3 rounded-xs border border-[#E8E2D8] text-xs space-y-1 text-stone-700">
+                    <p><strong>Package Inclusions (₱988):</strong> 1x 50ml EDP (30% Oil) + 10x Preferred Testers + Official Scent Catalog + Lifetime 15%–40% wholesale discount.</p>
+                </div>
+
+                <form id="partnerInquiryForm" onsubmit="submitPartnerInquiry(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="partnerName" required placeholder="e.g. Juan Dela Cruz" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Mobile Number <span class="text-red-500">*</span></label>
+                            <input type="tel" id="partnerPhone" required placeholder="0917 123 4567" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Email Address</label>
+                            <input type="email" id="partnerEmail" placeholder="juan@gmail.com" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">City / Province <span class="text-red-500">*</span></label>
+                        <input type="text" id="partnerLocation" required placeholder="e.g. Quezon City / Cebu / Davao" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Message / Experience (Optional)</label>
+                        <textarea id="partnerMessage" rows="2" placeholder="Tell us about your interest in reselling perfumes..." class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]"></textarea>
+                    </div>
+
+                    <div class="pt-2 flex gap-2">
+                        <button type="button" onclick="addPartnerKitToCartAndClose()" class="flex-1 py-3 border border-stone-800 text-stone-900 hover:bg-stone-900 hover:text-white text-xs uppercase tracking-wider font-semibold transition-all rounded-xs cursor-pointer">
+                            Add Kit to Bag
+                        </button>
+                        <button type="submit" class="flex-1 py-3 bg-[#C5A059] hover:bg-[#1A1817] text-white text-xs uppercase tracking-wider font-semibold transition-all rounded-xs cursor-pointer shadow-sm">
+                            Submit Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="partnerSuccessView" class="hidden p-8 text-center space-y-4">
+                <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
+                <h3 class="font-cormorant text-2xl font-light text-stone-900">Application Received!</h3>
+                <p class="text-xs text-stone-600 max-w-sm mx-auto">
+                    Thank you for applying to be a Drift & Co. Business Partner. Our distribution coordinator will reach out to your mobile number within 24 hours.
+                </p>
+                <div class="p-3 bg-[#FAF8F5] border border-[#E8E2D8] rounded-xs text-xs font-mono text-[#9E7D3B]" id="partnerInquiryRefId">
+                    Ref: PTR-12345
+                </div>
+                <button onclick="closePartnerModalDirect()" class="px-8 py-2.5 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-medium rounded-xs transition-colors cursor-pointer">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders & Partner Inquiries Dashboard Modal -->
+    <div id="ordersDashboardModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closeOrdersDashboard(event)">
+        <div class="bg-white max-w-4xl w-full rounded-sm overflow-hidden shadow-2xl border border-[#E8E2D8] relative max-h-[90vh] flex flex-col">
+            <div class="p-5 border-b border-[#E8E2D8] flex items-center justify-between bg-[#FAF8F5]">
+                <div class="flex items-center gap-3">
+                    <span class="font-cormorant text-2xl font-normal text-[#1A1817]">Orders & Inquiries Manager</span>
+                    <span class="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-xs">Node / Express Active</span>
+                </div>
+                <button onclick="closeOrdersDashboardDirect()" class="text-2xl text-stone-400 hover:text-black leading-none cursor-pointer">&times;</button>
+            </div>
+
+            <!-- Dashboard Stats Bar -->
+            <div class="grid grid-cols-3 border-b border-[#E8E2D8] divide-x divide-[#E8E2D8] bg-stone-50 text-center py-3">
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-stone-500 block">Total Orders</span>
+                    <span id="dashTotalOrders" class="font-cormorant text-2xl font-bold text-stone-900">0</span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-stone-500 block">Total Revenue</span>
+                    <span id="dashTotalRevenue" class="font-cormorant text-2xl font-bold text-[#C5A059]">₱0.00</span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-stone-500 block">Partner Inquiries</span>
+                    <span id="dashTotalInquiries" class="font-cormorant text-2xl font-bold text-stone-900">0</span>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex items-center gap-2 px-5 pt-3 border-b border-[#E8E2D8] overflow-x-auto">
+                <button id="tabOrdersBtn" onclick="switchOrdersTab('orders')" class="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border-b-2 border-[#1A1817] text-[#1A1817] cursor-pointer whitespace-nowrap">
+                    Customer Orders
+                </button>
+                <button id="tabInquiriesBtn" onclick="switchOrdersTab('inquiries')" class="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-black border-b-2 border-transparent cursor-pointer whitespace-nowrap">
+                    Business Partner Inquiries
+                </button>
+                <button id="tabNotificationsBtn" onclick="switchOrdersTab('notifications')" class="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-black border-b-2 border-transparent cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                    <span>🔔 SMS & Notifications</span>
+                    <span id="notifBadgeStatus" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </button>
+                <button id="tabPaymentsBtn" onclick="switchOrdersTab('payments')" class="px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-stone-500 hover:text-black border-b-2 border-transparent cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                    <span>💳 Bank & Payment Accounts</span>
+                </button>
+            </div>
+
+            <!-- Tab 1: Orders List -->
+            <div id="dashOrdersList" class="flex-1 overflow-y-auto p-5 space-y-3">
+                <p class="text-center text-xs text-stone-400 py-8">Loading orders...</p>
+            </div>
+
+            <!-- Tab 2: Inquiries List -->
+            <div id="dashInquiriesList" class="hidden flex-1 overflow-y-auto p-5 space-y-3">
+                <p class="text-center text-xs text-stone-400 py-8">Loading partner inquiries...</p>
+            </div>
+
+            <!-- Tab 3: SMS & Instant Notifications Settings -->
+            <div id="dashNotificationsSettings" class="hidden flex-1 overflow-y-auto p-5 space-y-5">
+                <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h4 class="font-cormorant text-xl font-semibold text-stone-900">Instant Order & SMS Notification Hub</h4>
+                            <p class="text-xs text-stone-600 mt-0.5">Automatically send customer receipts and receive instant alerts on your phone whenever someone orders.</p>
+                        </div>
+                        <button onclick="sendTestNotificationAlert()" id="btnSendTestAlert" class="px-3.5 py-1.5 bg-[#C5A059] hover:bg-[#d4b069] text-stone-950 font-bold text-xs uppercase tracking-wider rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            <span>Send Test Alert</span>
+                        </button>
+                    </div>
+                </div>
+
+                <form id="notifSettingsForm" onsubmit="saveNotificationSettings(event)" class="space-y-4">
+                    <!-- Owner Primary Phone & Contact -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 block border-b border-stone-100 pb-2">1. Store Owner Contact Details (Where alerts are routed)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Store Owner Mobile (PH) <span class="text-red-500">*</span></label>
+                                <input type="text" id="cfgOwnerPhone" placeholder="0917 123 4567" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]" required>
+                                <span class="text-[10px] text-stone-400">Receives SMS text alerts & 1-tap customer callbacks</span>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Store Name / Concierge Title</label>
+                                <input type="text" id="cfgOwnerName" placeholder="Drift & Co. Store Concierge" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Webhook Integration -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 block border-b border-stone-100 pb-2">2. Webhook Integration</span>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-stone-700 mb-1">Webhook URL</label>
+                            <input type="url" id="cfgWebhookUrl" placeholder="https://discord.com/api/webhooks/" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                            <span class="text-[10px] text-stone-400">Sends rich order summaries with customer phone, address, and items to your team channel or CRM</span>
+                        </div>
+                    </div>
+
+                    <!-- Notification Triggers & Sound -->
+                    <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs space-y-2.5">
+                        <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 block">Notification Triggers</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="cfgNotifyOwnerOnOrder" checked class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span>Notify store owner immediately when an order is placed</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="cfgNotifyCustomerOnOrder" checked class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span>Send confirmation text to customer upon checkout</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="cfgNotifyOwnerOnInquiry" checked class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span>Notify on new ₱988 Business Partner inquiry</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="cfgSoundAlertsEnabled" checked class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span>Play live sound chime on new orders when page is open</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Store Owner Security PIN / Passcode -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+                            <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 flex items-center gap-1.5">
+                                <span>🔒 3. Admin Passcode & Studio Security</span>
+                            </span>
+                            <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-xs">PIN Protected</span>
+                        </div>
+                        <p class="text-xs text-stone-500">Only visitors who enter this PIN can unlock Studio Mode via <code class="bg-stone-100 px-1 py-0.5 rounded-xs text-stone-700">Ctrl + Shift + A</code>, edit catalog products, or view confidential orders.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Owner Security PIN / Passcode</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" id="cfgAdminPin" placeholder="2010drift" class="flex-1 px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono tracking-widest text-stone-900" maxlength="20">
+                                    <button type="button" onclick="updateOwnerPinFromSettings()" class="px-3 py-2 bg-stone-100 hover:bg-[#C5A059] hover:text-white text-stone-800 rounded-xs text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap">
+                                        Update PIN
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button type="submit" id="btnSaveNotifSettings" class="px-6 py-2.5 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-semibold rounded-xs transition-colors cursor-pointer shadow-md">
+                            Save Notification Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 4: Bank & Payment Settings (BDO, BPI, GCash, and Gateways) -->
+            <div id="dashPaymentSettings" class="hidden flex-1 overflow-y-auto p-5 space-y-5">
+                <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h4 class="font-cormorant text-xl font-semibold text-stone-900">Bank Accounts & Payment Settings</h4>
+                            <p class="text-xs text-stone-600 mt-0.5">Configure your store's BPI, BDO, and GCash account numbers so customers can send direct payments during checkout.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="paymentSettingsForm" onsubmit="savePaymentSettings(event)" class="space-y-4">
+                    <!-- BPI Account -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 bg-red-700 text-white text-[10px] font-bold rounded-xs">BPI</span>
+                                <span class="text-xs uppercase tracking-wider font-semibold text-stone-900">Bank of the Philippine Islands (BPI)</span>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                <input type="checkbox" id="cfgBpiEnabled" class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span class="text-stone-600">Active in Checkout</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">BPI Account Name</label>
+                                <input type="text" id="cfgBpiAccountName" placeholder="e.g. Drift & Co. Fragrances" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">BPI Account Number</label>
+                                <input type="text" id="cfgBpiAccountNumber" placeholder="e.g. 0019-2834-51" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-stone-700 mb-1">BPI QR Ph Image URL (Optional)</label>
+                            <input type="url" id="cfgBpiQrUrl" placeholder="https://... (Direct link to BPI QR Code image)" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                        </div>
+                    </div>
+
+                    <!-- BDO Account -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 bg-blue-900 text-amber-300 text-[10px] font-bold rounded-xs">BDO</span>
+                                <span class="text-xs uppercase tracking-wider font-semibold text-stone-900">Banco de Oro (BDO Unibank)</span>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                <input type="checkbox" id="cfgBdoEnabled" class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span class="text-stone-600">Active in Checkout</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">BDO Account Name</label>
+                                <input type="text" id="cfgBdoAccountName" placeholder="e.g. Drift & Co. Fragrances" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">BDO Account Number</label>
+                                <input type="text" id="cfgBdoAccountNumber" placeholder="e.g. 0068-1234-5678" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-stone-700 mb-1">BDO QR Ph Image URL (Optional)</label>
+                            <input type="url" id="cfgBdoQrUrl" placeholder="https://... (Direct link to BDO QR Code image)" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                        </div>
+                    </div>
+
+                    <!-- GCash Account -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded-xs">GCash</span>
+                                <span class="text-xs uppercase tracking-wider font-semibold text-stone-900">GCash Mobile Wallet</span>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                <input type="checkbox" id="cfgGcashEnabled" class="rounded-xs text-[#C5A059] focus:ring-0">
+                                <span class="text-stone-600">Active in Checkout</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">GCash Account Name</label>
+                                <input type="text" id="cfgGcashAccountName" placeholder="e.g. Drift & Co. Store" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">GCash Mobile Number</label>
+                                <input type="text" id="cfgGcashNumber" placeholder="e.g. 0917 123 4567" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-stone-700 mb-1">GCash QR Ph Image URL (Optional)</label>
+                            <input type="url" id="cfgGcashQrUrl" placeholder="https://... (Direct link to GCash QR Code image)" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                        </div>
+                    </div>
+
+                    <!-- Payment Transfer Instructions -->
+                    <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs space-y-3">
+                        <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 block border-b border-stone-100 pb-2">Customer Payment Instructions</span>
+                        <div>
+                            <textarea id="cfgPaymentInstructions" rows="2" placeholder="e.g. Please transfer the total amount and send screenshot of confirmation to our concierge." class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Payment Gateway Information Callout -->
+                    <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs space-y-2">
+                        <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 block">💡 How Online Payment Gateways Work in the Philippines</span>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            For automated customer debit (where customers log in and approve payments via BPI Online or BDO directly on checkout), Philippine merchants connect through authorized gateways like <strong>PayMongo</strong>, <strong>Maya Business</strong>, or <strong>Xendit</strong>.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button type="submit" id="btnSavePaymentSettings" class="px-6 py-2.5 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-semibold rounded-xs transition-colors cursor-pointer shadow-md">
+                            Save Bank & Payment Accounts
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Order Tracking Modal -->
+    <div id="orderTrackingModal" class="modal-overlay fixed inset-0 bg-black/65 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closeOrderTrackerBackdrop(event)">
+        <div class="bg-white max-w-2xl w-full rounded-sm overflow-hidden shadow-2xl border border-[#E8E2D8] relative max-h-[92vh] flex flex-col" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-[#E8E2D8] flex items-center justify-between bg-[#1A1817] text-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/40 flex items-center justify-center text-[#C5A059] flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase tracking-widest text-[#C5A059] font-semibold block">Drift & Co. Parfumerie</span>
+                        <h3 class="font-cormorant text-2xl font-light leading-tight">Order Tracking & Courier Status</h3>
+                    </div>
+                </div>
+                <button onclick="closeOrderTracker()" class="text-2xl text-stone-400 hover:text-white leading-none cursor-pointer p-1">&times;</button>
+            </div>
+
+            <!-- Modal Search Input Bar -->
+            <div class="p-4 bg-[#FAF8F5] border-b border-[#E8E2D8]">
+                <form id="orderTrackingForm" onsubmit="handleTrackOrderSubmit(event)" class="space-y-2">
+                    <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold">
+                        Enter Order ID or Mobile Number
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input 
+                                type="text" 
+                                id="trackOrderInput" 
+                                placeholder="e.g. DRFT-444818, 444818, or 09181234567" 
+                                class="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059] font-mono text-stone-900"
+                                required
+                            >
+                            <svg class="w-4 h-4 text-stone-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <button 
+                            type="submit" 
+                            id="trackSubmitBtn" 
+                            class="px-5 py-2.5 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-semibold transition-colors rounded-xs cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                        >
+                            <span>Track</span>
+                        </button>
+                    </div>
+                    <!-- Quick Recent Order Chips -->
+                    <div id="trackRecentChips" class="flex items-center gap-2 pt-1 flex-wrap text-[11px] text-stone-500">
+                        <span class="text-[10px] uppercase font-semibold text-stone-400">Quick Samples:</span>
+                        <button type="button" onclick="quickTrackOrder('DRFT-444818')" class="px-2 py-0.5 bg-stone-200 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-mono transition-colors cursor-pointer">DRFT-444818</button>
+                        <button type="button" onclick="quickTrackOrder('DRFT-973766')" class="px-2 py-0.5 bg-stone-200 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-mono transition-colors cursor-pointer">DRFT-973766</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tracking Content Area -->
+            <div id="trackingContentArea" class="p-5 overflow-y-auto flex-1 space-y-4">
+                <!-- Initial Welcome State -->
+                <div id="trackInitialState" class="text-center py-8 px-4 space-y-3">
+                    <div class="w-14 h-14 mx-auto rounded-full bg-[#FAF8F5] border border-[#E8E2D8] flex items-center justify-center text-[#9E7D3B]">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <h4 class="font-cormorant text-2xl font-normal text-stone-800">Track Your Drift & Co. Parcel</h4>
+                    <p class="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+                        Enter your Order Reference ID from your checkout receipt or SMS notification (e.g. <span class="font-mono text-stone-700">DRFT-444818</span>). You can also search using the customer mobile number.
+                    </p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="trackLoadingState" class="hidden text-center py-12 space-y-3">
+                    <div class="w-9 h-9 border-2 border-stone-200 border-t-[#C5A059] rounded-full animate-spin mx-auto"></div>
+                    <p class="text-xs text-stone-500 tracking-wider uppercase font-semibold">Retrieving parcel status...</p>
+                </div>
+
+                <!-- Not Found / Error State -->
+                <div id="trackErrorState" class="hidden bg-stone-50 border border-stone-200 p-6 rounded-xs text-center space-y-3">
+                    <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">!</div>
+                    <div>
+                        <h4 class="font-cormorant text-xl font-semibold text-stone-900">Order Not Found</h4>
+                        <p id="trackErrorMessage" class="text-xs text-stone-600 mt-1 max-w-md mx-auto">
+                            No active order found matching your search. Please verify your reference number or contact our concierge.
+                        </p>
+                    </div>
+                    <div class="pt-2 flex justify-center gap-2 flex-wrap">
+                        <a href="https://api.whatsapp.com/send?phone=639569310005&text=Hi%20Drift%20%26%20Co.%2C%20I%20need%20help%20tracking%20my%20order" target="_blank" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors inline-flex items-center gap-1.5">
+                            💬 WhatsApp Concierge
+                        </a>
+                        <a href="tel:09569310005" class="px-4 py-2 border border-stone-400 text-stone-800 hover:border-black text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors inline-flex items-center gap-1.5">
+                            📞 Call 09569310005
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Results View (Populated dynamically) -->
+                <div id="trackResultState" class="hidden space-y-4">
+                    <!-- Populated via renderTrackingResult -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3.5 border-t border-[#E8E2D8] bg-[#FAF8F5] flex items-center justify-between text-xs text-stone-500">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Live Atelier & Courier Synchronized</span>
+                </span>
+                <button onclick="closeOrderTracker()" class="text-xs font-semibold text-stone-800 hover:text-[#C5A059] uppercase tracking-wider cursor-pointer">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Security Passcode Authentication Modal -->
+    <div id="adminAuthModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300" onclick="closeAdminAuthModal(event)">
+        <div class="bg-[#1A1817] border border-[#C5A059]/40 w-full max-w-sm rounded-sm p-6 text-white shadow-2xl space-y-4 relative transform scale-95 transition-transform" onclick="event.stopPropagation()">
+            <!-- Close button -->
+            <button onclick="closeAdminAuthModalDirect()" class="absolute top-4 right-4 text-stone-400 hover:text-white transition-colors cursor-pointer text-sm">
+                ✕
+            </button>
+
+            <div class="text-center space-y-1.5 pt-1">
+                <div class="w-12 h-12 rounded-full bg-[#C5A059]/10 border border-[#C5A059]/30 text-[#C5A059] flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+                    🔒
+                </div>
+                <h3 class="font-cormorant text-2xl font-normal text-stone-100">Drift & Co. Atelier</h3>
+                <p class="text-[10px] uppercase tracking-widest text-[#C5A059] font-bold">Owner & Studio Admin Security</p>
+                <p class="text-xs text-stone-400 pt-1">Enter your store owner security PIN or passcode to unlock atelier controls and order records.</p>
+            </div>
+
+            <form id="adminAuthForm" onsubmit="verifyAdminPasscode(event)" class="space-y-3 pt-2">
+                <div class="relative">
+                    <input type="password" id="adminPasscodeInput" placeholder="Enter Owner PIN / Passcode" class="w-full bg-stone-900 border border-stone-700 focus:border-[#C5A059] px-3.5 py-2.5 text-center text-sm tracking-widest text-white rounded-xs focus:outline-none transition-colors" autocomplete="off" required>
+                    <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white text-xs cursor-pointer">
+                        <span id="passcodeToggleIcon">👁️</span>
+                    </button>
+                </div>
+
+                <div id="adminAuthError" class="hidden text-[11px] text-red-400 text-center bg-red-950/40 border border-red-800/50 py-1.5 px-2 rounded-xs">
+                    Incorrect passcode. Access denied.
+                </div>
+
+                <div class="pt-2 flex items-center gap-2">
+                    <button type="button" onclick="closeAdminAuthModalDirect()" class="flex-1 py-2 px-3 border border-stone-700 hover:border-stone-500 text-stone-400 hover:text-white text-xs uppercase tracking-wider rounded-xs transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" id="btnSubmitAdminAuth" class="flex-1 py-2 px-3 bg-[#C5A059] hover:bg-[#d4b069] text-stone-950 font-bold text-xs uppercase tracking-wider rounded-xs transition-colors cursor-pointer shadow-md">
+                        Unlock Studio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Floating Publisher Dock (Lets store owner toggle between Studio Edit Mode and Clean Published View) -->
+    <div id="publisherDock" class="fixed bottom-4 left-4 z-40 transition-all duration-300">
+        <!-- Studio Edit Mode Dock -->
+        <div id="dockEditMode" class="bg-stone-900/95 text-white border border-stone-700/80 px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="text-stone-300 font-medium">Studio Mode</span>
+            </div>
+            <button onclick="openPhotoManager()" class="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white rounded-full text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>Upload Photos</span>
+            </button>
+            <button onclick="openOrdersDashboard()" class="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white rounded-full text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1.5" title="View live orders and reseller applications">
+                <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                <span>Orders (<span id="dockOrderCount">0</span>)</span>
+            </button>
+            <button onclick="openOrdersDashboard('payments')" class="px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-200 hover:text-white rounded-full text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1.5" title="Configure BPI, BDO & GCash Bank Accounts">
+                <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <span>BPI & BDO Accounts</span>
+            </button>
+            <button onclick="setPublishMode(true)" class="px-3.5 py-1 bg-[#C5A059] hover:bg-[#d6b26b] text-stone-950 font-bold rounded-full text-[11px] uppercase tracking-wider transition-colors cursor-pointer shadow-sm" title="Remove upload buttons and keep photos for publishing">
+                🚀 Publish (Hide Buttons)
+            </button>
+            <button onclick="lockAdminMode()" class="px-2.5 py-1 bg-stone-800 hover:bg-red-950 hover:text-red-300 text-stone-300 rounded-full text-[11px] transition-colors cursor-pointer flex items-center gap-1" title="Lock & hide admin studio mode">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <span>Lock</span>
+            </button>
+        </div>
+
+        <!-- Published Mode Pill (Discreet toggle for the store owner to resume editing) -->
+        <div id="dockPublishMode" class="hidden opacity-40 hover:opacity-100 transition-opacity bg-stone-900/90 text-white border border-stone-700 px-3.5 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-2 text-[11px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="text-stone-300">Published View</span>
+            <button onclick="setPublishMode(false)" class="text-[#C5A059] hover:underline font-semibold cursor-pointer ml-1">
+                Edit Photos
+            </button>
+            <button onclick="lockAdminMode()" class="text-stone-400 hover:text-red-400 cursor-pointer ml-1.5" title="Lock admin mode completely">
+                🔒 Lock
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden global file input for instant file uploads -->
+    <input type="file" id="globalImageUploader" accept="image/*" class="hidden" onchange="handleGlobalUpload(event)">
+    <input type="file" id="modalFileInput" accept="image/*" class="hidden" onchange="handleModalImageUpload(event)">
+
+
+    <!-- Modular Application Scripts -->
+    <script src="/js/catalog-data.js?v=11"></script>
+    <script src="/js/photo-manager.js?v=11"></script>
+    <script src="/js/cart.js?v=11"></script>
+    <script src="/js/checkout.js?v=11"></script>
+    <script src="/js/admin-dashboard.js?v=11"></script>
+    <script src="/js/tracking.js?v=11"></script>
+
+    <!-- Page Interaction & Catalog Controller -->
+    <script>
+        // State Management
+        let activeCategory = 'all';
+        let activeGender = 'all';
+        let searchQuery = '';
+
+        // DOM Elements
+        const productGrid = document.getElementById('productGrid');
+        const cartDrawer = document.getElementById('cartDrawer');
+        const cartOverlay = document.getElementById('cartOverlay');
+        const cartItemsContainer = document.getElementById('cartItems');
+        const cartCount = document.getElementById('cartCount');
+        const cartSubtotal = document.getElementById('cartSubtotal');
+        const cartTotalItems = document.getElementById('cartTotalItems');
+        const searchInput = document.getElementById('searchInput');
+        const genderFilter = document.getElementById('genderFilter');
+        const quickModal = document.getElementById('quickModal');
+        const noResults = document.getElementById('noResults');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+
+        // Initialize Application
+        function initApp() {
+            if (window._driftAppInitialized) return;
+            window._driftAppInitialized = true;
+            if (typeof applyAllCustomImages === 'function') applyAllCustomImages();
+            renderProducts();
+            setupEventListeners();
+            if (typeof updatePublishModeUI === 'function') updatePublishModeUI();
+            if (typeof loadStats === 'function') loadStats();
+            if (typeof syncSiteImagesWithServer === 'function') syncSiteImagesWithServer();
+            if (typeof loadPaymentSettings === 'function') loadPaymentSettings();
+            // Pre-select first finder item
+            if (typeof selectFinderCategory === 'function') {
+                const firstBtn = document.querySelector('.scent-tag-btn');
+                selectFinderCategory('woody', firstBtn);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        // Product Size Selection State
+        window.selectedProductSizes = window.selectedProductSizes || {};
+
+        function getProductSelectedSize(productId) {
+            return window.selectedProductSizes[productId] || { volume: '40ml', price: 380 };
+        }
+
+        function setCardProductSize(productId, volume, price) {
+            window.selectedProductSizes[productId] = { volume, price };
+
+            const volLabel = document.getElementById(`cardVolLabel_${productId}`);
+            if (volLabel) volLabel.innerText = volume;
+
+            const priceSpan = document.getElementById(`cardPrice_${productId}`);
+            if (priceSpan) priceSpan.innerText = `₱${price.toFixed(2)}`;
+
+            const subSpan = document.getElementById(`cardSub_${productId}`);
+            if (subSpan) subSpan.innerText = `${volume} Eau de Parfum`;
+
+            const btn40 = document.getElementById(`cardBtn_${productId}_40ml`);
+            const btn50 = document.getElementById(`cardBtn_${productId}_50ml`);
+
+            if (volume === '40ml') {
+                if (btn40) {
+                    btn40.className = 'px-2 py-0.5 text-[10px] font-semibold rounded-xs border border-[#1A1817] bg-[#1A1817] text-white transition-all cursor-pointer shadow-xs';
+                }
+                if (btn50) {
+                    btn50.className = 'px-2 py-0.5 text-[10px] font-semibold rounded-xs border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 transition-all cursor-pointer';
+                }
+            } else {
+                if (btn50) {
+                    btn50.className = 'px-2 py-0.5 text-[10px] font-semibold rounded-xs border border-[#1A1817] bg-[#1A1817] text-white transition-all cursor-pointer shadow-xs';
+                }
+                if (btn40) {
+                    btn40.className = 'px-2 py-0.5 text-[10px] font-semibold rounded-xs border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 transition-all cursor-pointer';
+                }
+            }
+        }
+
+        function addCardItemToCart(productId) {
+            const productList = window.products || products || [];
+            const item = productList.find(p => p.id === Number(productId));
+            if (!item) return;
+            const size = getProductSelectedSize(productId);
+            addToCart(item.name, size.price, item.image, size.volume);
+        }
+
+        // Render Product Cards
+        function renderProducts() {
+            const productList = window.products || products || [];
+            const siteData = typeof getStoredSiteImages === 'function' ? getStoredSiteImages() : { products: {} };
+            const customMap = siteData.products || {};
+            const filtered = productList.filter(product => {
+                const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
+                const matchesGender = activeGender === 'all' || product.gender === activeGender;
+                const matchesSearch = searchQuery === '' || 
+                    (product.name && product.name.toLowerCase().includes(searchQuery)) ||
+                    (product.inspiration && product.inspiration.toLowerCase().includes(searchQuery)) ||
+                    (product.description && product.description.toLowerCase().includes(searchQuery)) ||
+                    (product.topNotes && product.topNotes.toLowerCase().includes(searchQuery)) ||
+                    (product.baseNotes && product.baseNotes.toLowerCase().includes(searchQuery));
+
+                return matchesCategory && matchesGender && matchesSearch;
+            });
+
+            // Ensure Alphabetical Order (A to Z)
+            filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+            if (!productGrid) return;
+
+            if (filtered.length === 0) {
+                productGrid.innerHTML = '';
+                if (noResults) noResults.classList.remove('hidden');
+                return;
+            }
+
+            if (noResults) noResults.classList.add('hidden');
+            productGrid.innerHTML = filtered.map(item => {
+                const currentSize = getProductSelectedSize(item.id);
+                return `
+                <div class="product-card group flex flex-col bg-white border border-[#E8E2D8] rounded-sm overflow-hidden hover:shadow-lg">
+                    <!-- Image container -->
+                    <div class="relative aspect-[3/4] bg-[#F3EEE7] overflow-hidden cursor-pointer" onclick="quickView(${item.id})">
+                        <img 
+                            src="${item.image}" 
+                            alt="${item.name}" 
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                            loading="lazy"
+                            onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=800';"
+                        >
+                        
+                        <!-- Badges -->
+                        <div class="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
+                            <span class="text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 bg-[#FAF8F5]/90 backdrop-blur-xs text-[#9E7D3B] border border-[#E8E2D8] rounded-xs">
+                                30% Oil Load
+                            </span>
+                            <span class="text-[9px] uppercase tracking-wider font-medium px-2 py-0.5 bg-black/75 text-white rounded-xs">
+                                ${item.gender}
+                            </span>
+                            ${customMap[item.id] ? `<span class="edit-control text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 bg-stone-900/90 text-[#C5A059] border border-[#C5A059]/40 rounded-xs">Your Photo</span>` : ''}
+                        </div>
+
+                        <!-- Slide-up Quick Action Button -->
+                        <div class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex gap-2 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <button onclick="event.stopPropagation(); quickView(${item.id})" class="flex-1 py-2 bg-white text-stone-900 text-[10px] uppercase tracking-widest font-semibold hover:bg-[#FAF8F5] transition-colors rounded-xs shadow-sm cursor-pointer">
+                                View Notes
+                            </button>
+                            <button onclick="event.stopPropagation(); triggerQuickUpload(${item.id})" class="edit-control px-2.5 py-2 bg-white hover:bg-[#FAF8F5] text-stone-800 hover:text-[#C5A059] transition-colors rounded-xs shadow-sm cursor-pointer" title="Upload Bottle Photo directly">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); addCardItemToCart(${item.id})" class="px-3 py-2 bg-[#C5A059] text-white text-[10px] uppercase tracking-widest font-semibold hover:bg-white hover:text-stone-900 transition-colors rounded-xs shadow-sm cursor-pointer" title="Quick Add">
+                                + Bag
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between text-[11px] text-stone-500 uppercase tracking-wider mb-1">
+                                <span>Version of ${item.inspiration}</span>
+                                <span id="cardVolLabel_${item.id}" class="font-medium text-[#9E7D3B]">${currentSize.volume}</span>
+                            </div>
+
+                            <h3 onclick="quickView(${item.id})" class="font-cormorant text-xl font-normal text-[#1A1817] hover:text-[#C5A059] transition-colors cursor-pointer" title="Click to view scent notes">
+                                ${item.name}
+                            </h3>
+
+                            <p onclick="quickView(${item.id})" class="text-xs text-stone-600 font-light mt-1.5 line-clamp-2 leading-relaxed cursor-pointer hover:text-stone-900 transition-colors" title="Click to view scent notes">
+                                ${item.description}
+                            </p>
+
+                            <!-- Size Selector Pills on Card -->
+                            <div class="flex items-center gap-1.5 pt-2">
+                                <button type="button" onclick="event.stopPropagation(); setCardProductSize(${item.id}, '40ml', 380)" id="cardBtn_${item.id}_40ml" class="px-2 py-0.5 text-[10px] font-semibold rounded-xs border transition-all cursor-pointer ${currentSize.volume === '40ml' ? 'border-[#1A1817] bg-[#1A1817] text-white shadow-xs' : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'}">
+                                    40ml · ₱380
+                                </button>
+                                <button type="button" onclick="event.stopPropagation(); setCardProductSize(${item.id}, '50ml', 450)" id="cardBtn_${item.id}_50ml" class="px-2 py-0.5 text-[10px] font-semibold rounded-xs border transition-all cursor-pointer ${currentSize.volume === '50ml' ? 'border-[#1A1817] bg-[#1A1817] text-white shadow-xs' : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'}">
+                                    50ml · ₱450
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Price & Add -->
+                        <div class="pt-3 border-t border-stone-100 flex items-center justify-between">
+                            <div>
+                                <span id="cardPrice_${item.id}" class="text-base font-semibold text-[#1A1817]">₱${currentSize.price.toFixed(2)}</span>
+                                <span id="cardSub_${item.id}" class="block text-[10px] text-stone-400">${currentSize.volume} Eau de Parfum</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button 
+                                    onclick="quickView(${item.id})"
+                                    class="px-2.5 py-1.5 bg-white border border-stone-300 hover:border-black text-[#1A1817] text-[10px] uppercase tracking-wider font-semibold transition-all rounded-xs cursor-pointer hover:bg-stone-50"
+                                    title="View Notes & Olfactory Pyramid"
+                                >
+                                    Notes
+                                </button>
+                                <button 
+                                    id="cardAddBtn_${item.id}"
+                                    onclick="addCardItemToCart(${item.id})"
+                                    class="px-3.5 py-1.5 bg-[#FAF8F5] border border-stone-300 hover:border-black text-[#1A1817] text-[10px] uppercase tracking-wider font-semibold hover:bg-[#1A1817] hover:text-white transition-all rounded-xs cursor-pointer shadow-2xs"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Initialize scroll-triggered reveal animation
+            initScrollReveal();
+        }
+
+        // Scroll-triggered Reveal Animation for Product Cards
+        function initScrollReveal() {
+            const cards = productGrid.querySelectorAll('.product-card');
+            if (!cards || cards.length === 0) return;
+            cards.forEach(card => card.classList.add('revealed'));
+        }
+
+        // Setup Interactive Listeners
+        function setupEventListeners() {
+            // Category Filter Pills
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.cat-pill').forEach(b => {
+                        b.classList.remove('bg-[#1A1817]', 'text-white');
+                        b.classList.add('bg-white', 'text-stone-600');
+                    });
+                    btn.classList.add('bg-[#1A1817]', 'text-white');
+                    btn.classList.remove('bg-white', 'text-stone-600');
+
+                    activeCategory = btn.dataset.category;
+                    renderProducts();
+                });
+            });
+
+            // Search Bar Input
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                renderProducts();
+            });
+
+            // Gender Filter Select
+            genderFilter.addEventListener('change', (e) => {
+                activeGender = e.target.value;
+                renderProducts();
+            });
+
+            // Mobile Menu
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                mobileMenu.classList.toggle('flex');
+            });
+
+            // Smooth Scroll Animation for Top Nav Bar & Anchor Links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    const targetId = this.getAttribute('href');
+                    if (!targetId || targetId === '#') return;
+
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        e.preventDefault();
+
+                        // Gracefully close mobile drawer if open
+                        if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                            mobileMenu.classList.add('hidden');
+                            mobileMenu.classList.remove('flex');
+                        }
+
+                        // Header clearance calculation (header height 80px + 12px breathing room)
+                        const headerOffset = 92;
+                        const elementPosition = targetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+
+                        // Visual feedback on clicked nav item
+                        document.querySelectorAll('.nav-link').forEach(nl => nl.classList.remove('active-nav', 'text-[#C5A059]'));
+                        if (this.classList.contains('nav-link')) {
+                            this.classList.add('active-nav', 'text-[#C5A059]');
+                        }
+
+                        // Update browser hash cleanly without jarring jump
+                        if (window.history && window.history.pushState) {
+                            window.history.pushState(null, null, targetId);
+                        }
+                    }
+                });
+            });
+
+            // Scroll-spy to highlight current top nav item during scroll
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', () => {
+                let currentSectionId = '';
+                const scrollY = window.pageYOffset;
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 140;
+                    const sectionHeight = section.offsetHeight;
+                    if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                        currentSectionId = section.getAttribute('id');
+                    }
+                });
+
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active-nav', 'text-[#C5A059]');
+                    if (currentSectionId && link.getAttribute('href') === `#${currentSectionId}`) {
+                        link.classList.add('active-nav', 'text-[#C5A059]');
+                    }
+                });
+            }, { passive: true });
+
+            // Cart Drawer Open
+            document.getElementById('openCartBtn').addEventListener('click', openCart);
+        }
+
+        // Reset Filter View
+        function resetFilters() {
+            activeCategory = 'all';
+            activeGender = 'all';
+            searchQuery = '';
+            searchInput.value = '';
+            genderFilter.value = 'all';
+
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.classList.remove('bg-[#1A1817]', 'text-white');
+                b.classList.add('bg-white', 'text-stone-600');
+            });
+            document.querySelector('.cat-pill[data-category="all"]').classList.add('bg-[#1A1817]', 'text-white');
+
+            renderProducts();
+        }
+
+        // Scent Finder Selection Logic
+        function selectFinderCategory(categoryKey, btnElement) {
+            document.querySelectorAll('.scent-tag-btn').forEach(btn => {
+                btn.classList.remove('bg-[#1A1817]', 'text-white');
+                btn.classList.add('bg-white', 'text-stone-700');
+            });
+            if (btnElement) {
+                btnElement.classList.add('bg-[#1A1817]', 'text-white');
+                btnElement.classList.remove('bg-white', 'text-stone-700');
+            }
+
+            // Find matching scent
+            const match = products.find(p => p.category === categoryKey) || products[0];
+
+            const discoveryCard = document.getElementById('discoveryCard');
+            discoveryCard.style.opacity = '0.4';
+
+            setTimeout(() => {
+                document.getElementById('discImg').src = match.image;
+                document.getElementById('discTitle').innerText = `${match.name} (Version of ${match.inspiration})`;
+                document.getElementById('discCategory').innerText = `${categoryKey.toUpperCase()} HARMONY • 30% OIL`;
+                document.getElementById('discGender').innerText = match.gender;
+                document.getElementById('discPrice').innerHTML = `₱380.00 <span class="text-xs text-stone-400 font-normal">/ 40ml (50ml Deluxe ₱450.00)</span>`;
+                document.getElementById('discDesc').innerText = match.description;
+                document.getElementById('discNotes').innerText = `Top: ${match.topNotes} | Heart: ${match.heartNotes} | Base: ${match.baseNotes}`;
+                
+                const discAddBtn = document.getElementById('discAddBtn');
+                discAddBtn.innerText = `Add 40ml to Bag — ₱380.00`;
+                discAddBtn.onclick = () => addToCart(match.name, 380, match.image, '40ml');
+
+                const discViewBtn = document.getElementById('discViewBtn');
+                discViewBtn.onclick = () => quickView(match.id);
+
+                discoveryCard.style.opacity = '1';
+            }, 200);
+        }
+
+        let currentModalSize = { volume: '40ml', price: 380 };
+
+        function selectModalSize(volume) {
+            const price = volume === '50ml' ? 450 : 380;
+            currentModalSize = { volume, price };
+
+            const productList = window.products || products || [];
+            const item = productList.find(p => p.id === Number(currentModalProductId));
+            const itemName = item ? item.name : 'Fragrance';
+            const itemImg = item ? item.image : '';
+
+            const elPrice = document.getElementById('modalPrice');
+            if (elPrice) elPrice.innerText = `₱${price.toFixed(2)}`;
+
+            const elVol = document.getElementById('modalVolumeLabel');
+            if (elVol) elVol.innerText = `${volume} Eau de Parfum (30% Oil)`;
+
+            const btn40 = document.getElementById('modalSizeBtn40ml');
+            const btn50 = document.getElementById('modalSizeBtn50ml');
+
+            if (volume === '40ml') {
+                if (btn40) btn40.className = 'flex-1 py-1.5 px-3 border border-[#1A1817] bg-[#1A1817] text-white text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer shadow-xs';
+                if (btn50) btn50.className = 'flex-1 py-1.5 px-3 border border-stone-300 bg-white hover:border-black text-stone-800 text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer';
+            } else {
+                if (btn50) btn50.className = 'flex-1 py-1.5 px-3 border border-[#1A1817] bg-[#1A1817] text-white text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer shadow-xs';
+                if (btn40) btn40.className = 'flex-1 py-1.5 px-3 border border-stone-300 bg-white hover:border-black text-stone-800 text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer';
+            }
+
+            const modalAddBtn = document.getElementById('modalAddBtn');
+            if (modalAddBtn) {
+                modalAddBtn.innerText = `Add ${volume} to Bag — ₱${price.toFixed(2)}`;
+                modalAddBtn.onclick = () => {
+                    addToCart(itemName, price, itemImg, volume);
+                    closeModalDirect();
+                };
+            }
+
+            if (currentModalProductId) {
+                setCardProductSize(currentModalProductId, volume, price);
+            }
+        }
+
+        // Quick View Modal Logic
+        function quickView(productId) {
+            try {
+                const item = products.find(p => p.id === Number(productId));
+                if (!item) return;
+
+                currentModalProductId = item.id;
+                const customMap = getStoredCustomImages();
+                const isCustom = !!customMap[item.id];
+
+                const modalImg = document.getElementById('modalImg');
+                if (modalImg) modalImg.src = item.image;
+
+                const badge = document.getElementById('modalCustomBadge');
+                const resetBtn = document.getElementById('modalResetImgBtn');
+                if (badge) badge.classList.toggle('hidden', !isCustom);
+                if (resetBtn) resetBtn.classList.toggle('hidden', !isCustom);
+
+                const elCat = document.getElementById('modalCategory');
+                if (elCat) elCat.innerText = `${item.category.toUpperCase()} EDITION`;
+                const elGen = document.getElementById('modalGender');
+                if (elGen) elGen.innerText = item.gender;
+                const elTitle = document.getElementById('modalTitle');
+                if (elTitle) elTitle.innerText = item.name;
+                const elInsp = document.getElementById('modalInspiration');
+                if (elInsp) elInsp.innerText = `Artisanal version of ${item.inspiration}`;
+                const elDesc = document.getElementById('modalDesc');
+                if (elDesc) elDesc.innerText = item.description;
+
+                const elTop = document.getElementById('modalTopNotes');
+                if (elTop) elTop.innerText = item.topNotes || 'Bergamot, Citrus, Fresh Notes';
+                const elHeart = document.getElementById('modalHeartNotes');
+                if (elHeart) elHeart.innerText = item.heartNotes || 'Florals, Spices, Herbal Accord';
+                const elBase = document.getElementById('modalBaseNotes');
+                if (elBase) elBase.innerText = item.baseNotes || 'Cedarwood, Amber, Clean Musk';
+
+                // Sync modal size selection with current card size or default to 40ml
+                const activeSize = getProductSelectedSize(item.id);
+                selectModalSize(activeSize.volume);
+
+                if (quickModal) {
+                    quickModal.classList.remove('opacity-0', 'pointer-events-none');
+                    quickModal.classList.add('opacity-100', 'pointer-events-auto');
+                }
+            } catch (err) {
+                console.error("Error opening quickView modal:", err);
+            }
+        }
+
+        function closeModal(e) {
+            if (e.target === quickModal) {
+                closeModalDirect();
+            }
+        }
+
+        function closeModalDirect() {
+            quickModal.classList.remove('opacity-100', 'pointer-events-auto');
+            quickModal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+
+        // Testimonial Filter Controller
+        function filterReviews(category, btn) {
+            const cards = document.querySelectorAll('.review-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.getAttribute('data-category') === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.querySelectorAll('.review-filter-btn').forEach(b => {
+                b.className = 'review-filter-btn px-4 py-1.5 text-xs uppercase tracking-widest rounded-full transition-all bg-white text-stone-700 border border-[#E8E2D8] hover:border-[#C5A059] cursor-pointer';
+            });
+
+            if (btn) {
+                btn.className = 'review-filter-btn px-4 py-1.5 text-xs uppercase tracking-widest rounded-full transition-all bg-[#1A1817] text-white border border-[#1A1817] cursor-pointer';
+            }
+        }
+    </script>
+</body>
+</html>

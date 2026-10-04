@@ -1,0 +1,6 @@
+{
+  "name": "Drift & Co. Fragrance Catalog",
+  "description": "Explore our exclusive collection of luxury signature scents.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

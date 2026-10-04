@@ -1,0 +1,99 @@
+:root {
+    --bg-primary: #FAF8F5;
+    --bg-secondary: #F3EEE7;
+    --bg-card: #FFFFFF;
+    --text-primary: #1A1817;
+    --text-muted: #6E6862;
+    --accent-gold: #C5A059;
+    --border-subtle: #E8E2D8;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --transition-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Publishing Mode: hides all upload buttons, badges, and editing UI for visitors */
+body.published-mode .edit-control {
+    display: none !important;
+}
+
+.font-cormorant {
+    font-family: var(--font-serif);
+}
+
+.tracking-widest-plus {
+    letter-spacing: 0.25em;
+}
+
+.nav-link {
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 0;
+    height: 1.5px;
+    background-color: var(--accent-gold);
+    transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.nav-link:hover::after,
+.nav-link.active-nav::after {
+    width: 100%;
+}
+
+.cart-drawer,
+.modal-overlay,
+.quick-add-btn {
+    transition: all 0.35s var(--transition-smooth);
+}
+
+/* Scroll-triggered Reveal Animation for Product Cards */
+.product-card {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), 
+                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), 
+                box-shadow 0.35s ease, 
+                border-color 0.35s ease;
+    will-change: opacity, transform;
+}
+
+.product-card.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.product-card:hover .quick-add-btn {
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .product-card {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
