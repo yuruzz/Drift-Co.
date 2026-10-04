@@ -27,4 +27,4 @@ Notification channels such as Telegram, Semaphore, Twilio, and webhooks are conf
 
 For ntfy order alerts, subscribe to the same topic in the ntfy app and enter either the topic name or its `https://ntfy.sh/<topic>` URL in Studio Mode. Use **Send Test Alert** to verify delivery.
 
-For sharing the catalog in Messenger, use `https://driftco-website.vercel.app/share/`. This page has a distinct canonical URL and social preview metadata, then redirects visitors to the catalog. Its share image is a clean 1200×630 JPEG for chat-app link previews.
+For sharing the catalog in Messenger or Discord, use `https://driftco-website.vercel.app/share-v2/`. This page has a fresh canonical URL and social preview metadata, then redirects visitors to the catalog. Its share image is a clean 1200×630 JPEG for chat-app link previews.
