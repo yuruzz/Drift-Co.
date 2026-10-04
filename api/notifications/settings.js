@@ -1,4 +1,4 @@
-import { defaultSettings, publicSettings } from '../../lib/notifications.js';
+import { defaultSettings, normalizeNtfyTopic, publicSettings } from '../../lib/notifications.js';
 import { redisCommand } from '../../lib/redis.js';
 import { requireStudioAccess } from '../../lib/studio-auth.js';
 
@@ -32,6 +32,7 @@ function normalizeSettings(current, body) {
   for (const field of textFields) {
     if (body[field] !== undefined) updated[field] = String(body[field]).trim();
   }
+  updated.ntfyTopic = normalizeNtfyTopic(updated.ntfyTopic);
   for (const field of SECRET_FIELDS) {
     if (body[field] && !String(body[field]).includes('••••')) {
       updated[field] = String(body[field]).trim();

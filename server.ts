@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { normalizeNtfyTopic } from './lib/notifications.js';
 
 dotenv.config();
 
@@ -333,7 +334,7 @@ async function startServer() {
 
     // 5. Free Direct Phone Push (ntfy.sh - Zero Setup, Zero Cost, Works on Any Phone)
     if (settings.notifyOwnerOnOrder) {
-      const topic = (settings.ntfyTopic || 'drift-co-orders-alert').trim();
+      const topic = normalizeNtfyTopic(settings.ntfyTopic);
       try {
         const ntfyRes = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
           method: 'POST',
@@ -755,7 +756,7 @@ async function startServer() {
       twilioAccountSid: body.twilioAccountSid !== undefined ? String(body.twilioAccountSid).trim() : current.twilioAccountSid,
       twilioAuthToken: body.twilioAuthToken && !body.twilioAuthToken.includes('••••') ? String(body.twilioAuthToken).trim() : current.twilioAuthToken,
       twilioFromNumber: body.twilioFromNumber !== undefined ? String(body.twilioFromNumber).trim() : current.twilioFromNumber,
-      ntfyTopic: body.ntfyTopic !== undefined ? String(body.ntfyTopic).trim() : (current.ntfyTopic || 'drift-co-orders-alert'),
+      ntfyTopic: normalizeNtfyTopic(body.ntfyTopic !== undefined ? body.ntfyTopic : current.ntfyTopic),
       notifyOwnerOnOrder: body.notifyOwnerOnOrder !== undefined ? Boolean(body.notifyOwnerOnOrder) : current.notifyOwnerOnOrder,
       notifyCustomerOnOrder: body.notifyCustomerOnOrder !== undefined ? Boolean(body.notifyCustomerOnOrder) : current.notifyCustomerOnOrder,
       notifyOwnerOnInquiry: body.notifyOwnerOnInquiry !== undefined ? Boolean(body.notifyOwnerOnInquiry) : current.notifyOwnerOnInquiry,

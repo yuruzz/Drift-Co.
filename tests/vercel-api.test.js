@@ -6,6 +6,7 @@ process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
 process.env.STUDIO_ADMIN_PIN = 'test-studio-pin';
 
 const { default: settingsHandler } = await import('../api/notifications/settings.js');
+const { normalizeNtfyTopic } = await import('../lib/notifications.js');
 const { default: ordersHandler } = await import('../api/orders.js');
 const { default: orderStatusHandler } = await import('../api/orders/[id]/status.js');
 const { default: statsHandler } = await import('../api/stats.js');
@@ -74,6 +75,7 @@ test('notification settings persist in Redis without returning secrets', async (
       ownerName: 'Studio Owner',
       webhookUrl: 'https://hooks.example.com/new-order',
       telegramBotToken: 'secret-bot-token',
+      ntfyTopic: 'https://ntfy.sh/my-store-orders',
       notifyOwnerOnOrder: true,
     },
   }, saveResponse);
@@ -87,6 +89,8 @@ test('notification settings persist in Redis without returning secrets', async (
   await settingsHandler({ method: 'GET', headers: { 'x-studio-pin': 'test-studio-pin' } }, readResponse);
   assert.equal(readResponse.body.settings.ownerName, 'Studio Owner');
   assert.equal(readResponse.body.settings.webhookUrl, 'https://hooks.example.com/new-order');
+  assert.equal(readResponse.body.settings.ntfyTopic, 'my-store-orders');
+  assert.equal(notifications.some(call => call.url === 'https://ntfy.sh/my-store-orders'), false);
 
   const maskedSaveResponse = responseRecorder();
   await settingsHandler({
@@ -96,6 +100,12 @@ test('notification settings persist in Redis without returning secrets', async (
   }, maskedSaveResponse);
   assert.equal(maskedSaveResponse.body.success, true);
   assert.equal(JSON.parse(values.get('drift:notification-settings')).telegramBotToken, 'secret-bot-token');
+});
+
+test('ntfy topics accept names or ntfy.sh URLs and reject unrelated URLs', () => {
+  assert.equal(normalizeNtfyTopic('my-store-orders'), 'my-store-orders');
+  assert.equal(normalizeNtfyTopic('https://ntfy.sh/my-store-orders'), 'my-store-orders');
+  assert.throws(() => normalizeNtfyTopic('https://example.com/my-store-orders'), /https:\/\/ntfy\.sh/);
 });
 
 test('orders are stored, use saved notification settings, and appear in Studio stats', async () => {
@@ -115,7 +125,9 @@ test('orders are stored, use saved notification settings, and appear in Studio s
   assert.equal(orderResponse.statusCode, 201);
   assert.equal(orderResponse.body.success, true);
   assert.equal(orderResponse.body.order.notificationsSent.some(log => log.channel === 'Webhook Alert' && log.status === 'Sent'), true);
+  assert.equal(orderResponse.body.order.notificationsSent.some(log => log.channel === 'Instant Phone Alert (ntfy.sh/my-store-orders)' && log.status === 'Sent'), true);
   assert.equal(notifications.some(call => call.url === 'https://hooks.example.com/new-order'), true);
+  assert.equal(notifications.some(call => call.url === 'https://ntfy.sh/my-store-orders'), true);
 
   const orders = [...(hashes.get('drift:orders') || new Map()).values()].map(JSON.parse);
   assert.equal(orders.length, 1);

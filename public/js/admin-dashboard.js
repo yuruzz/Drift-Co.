@@ -525,9 +525,15 @@
                 const res = await fetch('/api/notifications/test', { method: 'POST', headers: studioApiHeaders() });
                 const data = await res.json();
                 if (data.success) {
-                    const channels = (data.logs || []).map(l => `${l.channel}: ${l.status}`).join(' | ');
-                    showToast(`Test alert fired! (${channels})`);
-                    playOrderAlertChime();
+                    const ntfy = (data.logs || []).find(log => log.channel.startsWith('Instant Phone Alert'));
+                    if (ntfy?.status === 'Sent') {
+                        showToast(`ntfy test sent to ${ntfy.recipient}.`);
+                        playOrderAlertChime();
+                    } else if (ntfy?.status === 'Failed') {
+                        showToast(`ntfy failed: ${ntfy.error || 'check the topic and Vercel function logs'}`);
+                    } else {
+                        showToast('ntfy was not sent. Enable owner order notifications and save settings.');
+                    }
                 } else {
                     showToast(data.error || 'Failed to trigger test notification.');
                 }
