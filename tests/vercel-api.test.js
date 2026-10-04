@@ -9,6 +9,7 @@ process.env.STUDIO_ADMIN_PIN = 'test-studio-pin';
 const { default: settingsHandler } = await import('../api/notifications/settings.js');
 const { normalizeNtfyTopic } = await import('../lib/notifications.js');
 const { default: ordersHandler } = await import('../api/orders.js');
+const { default: inquiriesHandler } = await import('../api/partner-inquiries.js');
 const { default: orderStatusHandler } = await import('../api/orders/[id]/status.js');
 const { default: statsHandler } = await import('../api/stats.js');
 
@@ -161,6 +162,59 @@ test('orders are stored, use saved notification settings, and appear in Studio s
   assert.deepEqual(statsResponse.body.stats, { totalOrders: 1, totalRevenue: 500, totalInquiries: 0 });
 });
 
+test('partner inquiries persist and notify through saved webhook and ntfy settings', async () => {
+  notifications.length = 0;
+  const response = responseRecorder();
+  await inquiriesHandler({
+    method: 'POST',
+    body: {
+      name: 'Test Partner',
+      phone: '09171112222',
+      email: 'partner@example.com',
+      location: 'Manila',
+      message: 'Interested in reselling.',
+      packageType: 'Starter Package ₱988',
+    },
+  }, response);
+
+  assert.equal(response.statusCode, 201);
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.inquiry.notificationsSent.some(log => log.channel === 'Webhook Alert' && log.status === 'Sent'), true);
+  assert.equal(response.body.inquiry.notificationsSent.some(log => log.channel === 'Instant Phone Alert (ntfy.sh/my-store-orders)' && log.status === 'Sent'), true);
+  assert.equal(notifications.some(call => call.url === 'https://hooks.example.com/new-order' && JSON.parse(call.body).event === 'inquiry.created'), true);
+  assert.equal(notifications.some(call => call.url === 'https://ntfy.sh/my-store-orders' && call.body.includes('Test Partner')), true);
+
+  const stored = [...(hashes.get('drift:inquiries') || new Map()).values()].map(JSON.parse);
+  assert.equal(stored.length, 1);
+  assert.equal(stored[0].name, 'Test Partner');
+
+  const dashboardResponse = responseRecorder();
+  await inquiriesHandler({ method: 'GET', headers: { 'x-studio-pin': 'test-studio-pin' } }, dashboardResponse);
+  assert.equal(dashboardResponse.body.inquiries[0].name, 'Test Partner');
+});
+
+test('partner inquiry notification toggle suppresses external alerts', async () => {
+  const key = 'drift:notification-settings';
+  const previousSettings = values.get(key);
+  const settings = JSON.parse(previousSettings);
+  settings.notifyOwnerOnInquiry = false;
+  values.set(key, JSON.stringify(settings));
+  notifications.length = 0;
+  const response = responseRecorder();
+
+  try {
+    await inquiriesHandler({
+      method: 'POST',
+      body: { name: 'Alerts Disabled', phone: '09173334444' },
+    }, response);
+    assert.equal(response.statusCode, 201);
+    assert.equal(notifications.length, 0);
+    assert.deepEqual(response.body.inquiry.notificationsSent.map(log => log.channel), ['App & Reseller Hub']);
+  } finally {
+    values.set(key, previousSettings);
+  }
+});
+
 test('settings requests fail clearly when Redis credentials are unavailable', async () => {
   const originalUrl = process.env.UPSTASH_REDIS_REST_URL;
   const originalToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -188,6 +242,13 @@ test('notification settings reject requests without the Studio PIN', async () =>
 test('order details are not returned to requests without the Studio PIN', async () => {
   const response = responseRecorder();
   await ordersHandler({ method: 'GET', headers: {} }, response);
+  assert.equal(response.statusCode, 401);
+  assert.equal(response.body.success, false);
+});
+
+test('partner inquiry details are not returned without the Studio PIN', async () => {
+  const response = responseRecorder();
+  await inquiriesHandler({ method: 'GET', headers: {} }, response);
   assert.equal(response.statusCode, 401);
   assert.equal(response.body.success, false);
 });

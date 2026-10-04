@@ -1,58 +1,83 @@
-// Vercel Serverless Function: /api/partner-inquiries
-// Handles reseller and partner inquiries on Vercel deployments
+import { defaultSettings, dispatchInquiryNotifications } from '../lib/notifications.js';
+import { getHash, redisCommand, saveRecord } from '../lib/redis.js';
+import { requireStudioAccess } from '../lib/studio-auth.js';
 
-export default async function handler(req, res) {
+const INQUIRIES_KEY = 'drift:inquiries';
+
+function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Studio-Pin');
+}
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+function respondWithError(res, error) {
+  console.error('Partner inquiries API error:', error);
+  return res.status(error.statusCode || 500).json({
+    success: false,
+    error: error.message || 'Unable to process partner inquiry.',
+  });
+}
 
-  if (req.method === 'POST') {
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-      const { name, phone, email, location, message, packageType } = body;
+export default async function handler(req, res) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-      if (!name || !phone) {
-        return res.status(400).json({ success: false, error: 'Name and phone number are required.' });
-      }
-
-      const inqId = 'INQ-' + Math.floor(100000 + Math.random() * 900000);
-      const inquiry = {
-        id: inqId,
-        name: String(name).trim(),
-        phone: String(phone).trim(),
-        email: email ? String(email).trim() : undefined,
-        location: location ? String(location).trim() : undefined,
-        message: message ? String(message).trim() : undefined,
-        packageType: packageType || 'Starter Package ₱988',
-        status: 'New',
-        createdAt: new Date().toISOString()
-      };
-
-      try {
-        await fetch('https://ntfy.sh/drift-co-orders-alert', {
-          method: 'POST',
-          headers: {
-            'Title': `New Drift & Co. Reseller Inquiry: ${inquiry.name}`,
-            'Priority': 'high',
-            'Tags': 'briefcase,handshake'
-          },
-          body: `Applicant: ${inquiry.name} (${inquiry.phone})\nLocation: ${inquiry.location || 'N/A'}\nPackage: ${inquiry.packageType}\nMessage: ${inquiry.message || 'None'}`
-        });
-      } catch (e) {}
-
-      return res.status(201).json({
-        success: true,
-        message: 'Partner inquiry submitted successfully!',
-        inquiry
-      });
-    } catch (err) {
-      return res.status(500).json({ success: false, error: 'Server error processing inquiry.' });
+  try {
+    if (req.method === 'GET') {
+      if (!requireStudioAccess(req, res)) return;
+      const inquiries = Object.values(await getHash(INQUIRIES_KEY))
+        .sort((first, second) => new Date(second.createdAt) - new Date(first.createdAt));
+      return res.status(200).json({ success: true, inquiries });
     }
-  }
 
-  return res.status(200).json({ success: true, inquiries: [] });
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'GET, POST, OPTIONS');
+      return res.status(405).json({ success: false, error: 'Method not allowed.' });
+    }
+
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    const { name, phone, email, location, message, packageType } = body;
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, error: 'Name and phone number are required.' });
+    }
+
+    const savedSettings = await redisCommand('GET', 'drift:notification-settings');
+    const settings = savedSettings ? { ...defaultSettings, ...JSON.parse(savedSettings) } : { ...defaultSettings };
+    const inquiry = {
+      id: `PTR-${Math.floor(10000 + Math.random() * 90000)}`,
+      name: String(name).trim(),
+      phone: String(phone).trim(),
+      ...(email ? { email: String(email).trim() } : {}),
+      ...(location ? { location: String(location).trim() } : {}),
+      ...(message ? { message: String(message).trim() } : {}),
+      packageType: String(packageType || 'Starter Package ₱988'),
+      status: 'New',
+      createdAt: new Date().toISOString(),
+      notificationsSent: [],
+    };
+
+    await saveRecord(INQUIRIES_KEY, inquiry.id, inquiry);
+
+    try {
+      inquiry.notificationsSent = await dispatchInquiryNotifications(inquiry, settings);
+      await saveRecord(INQUIRIES_KEY, inquiry.id, inquiry);
+    } catch (error) {
+      console.error(`Inquiry notification or log persistence failed for ${inquiry.id}:`, error);
+      inquiry.notificationsSent = [{
+        channel: 'Inquiry notification',
+        recipient: 'Store notification settings',
+        status: 'Failed',
+        error: error.message || 'Unable to dispatch inquiry notifications.',
+        timestamp: new Date().toISOString(),
+      }];
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Partner inquiry submitted successfully!',
+      inquiry,
+    });
+  } catch (error) {
+    return respondWithError(res, error);
+  }
 }

@@ -729,7 +729,7 @@
                 }
 
                 // Load inquiries
-                const inqRes = await fetch('/api/partner-inquiries');
+                const inqRes = await fetch('/api/partner-inquiries', { headers: studioApiHeaders() });
                 const inqData = await inqRes.json();
                 const inqContainer = document.getElementById('dashInquiriesList');
 
