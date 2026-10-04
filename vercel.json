@@ -1,6 +1,27 @@
 {
   "version": 2,
+  "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
+    {
+      "source": "/api/notifications/settings",
+      "destination": "/api/notifications/settings.js"
+    },
+    {
+      "source": "/api/notifications/test",
+      "destination": "/api/notifications/test.js"
+    },
+    {
+      "source": "/api/orders/:id/status",
+      "destination": "/api/order-status.js?id=:id"
+    },
+    {
+      "source": "/api/orders/:id/notify",
+      "destination": "/api/order-notify.js?id=:id"
+    },
+    {
+      "source": "/api/orders/track/:query",
+      "destination": "/api/order-track.js?query=:query"
+    },
     {
       "source": "/api/orders",
       "destination": "/api/orders.js"

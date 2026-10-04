@@ -4,6 +4,13 @@
         // --- Orders & Inquiries Admin Dashboard ---
         let activeOrdersTab = 'orders';
 
+        function studioApiHeaders(headers = {}) {
+            const pin = typeof getStoredAdminPin === 'function'
+                ? getStoredAdminPin()
+                : (localStorage.getItem('drift_admin_pin') || '2010drift');
+            return { ...headers, 'X-Studio-Pin': pin };
+        }
+
         function openOrdersDashboard(initialTab = 'orders') {
             if (typeof checkAdminAccess === 'function' && !checkAdminAccess()) {
                 if (typeof openAdminAuthModal === 'function') {
@@ -425,7 +432,7 @@
 
         async function loadNotificationSettings() {
             try {
-                const res = await fetch('/api/notifications/settings');
+                const res = await fetch('/api/notifications/settings', { headers: studioApiHeaders() });
                 const data = await res.json();
                 if (data.success && data.settings) {
                     const s = data.settings;
@@ -442,6 +449,8 @@
                     if (document.getElementById('cfgNotifyCustomerOnOrder')) document.getElementById('cfgNotifyCustomerOnOrder').checked = s.notifyCustomerOnOrder !== false;
                     if (document.getElementById('cfgNotifyOwnerOnInquiry')) document.getElementById('cfgNotifyOwnerOnInquiry').checked = s.notifyOwnerOnInquiry !== false;
                     if (document.getElementById('cfgSoundAlertsEnabled')) document.getElementById('cfgSoundAlertsEnabled').checked = s.soundAlertsEnabled !== false;
+                } else if (data.error) {
+                    showToast(data.error);
                 }
             } catch (err) {
                 console.error('Error loading notification settings:', err);
@@ -491,14 +500,14 @@
             try {
                 const res = await fetch('/api/notifications/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: studioApiHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (data.success) {
+                if (res.ok && data.success) {
                     showToast('Notification settings saved successfully!');
                 } else {
-                    showToast('Failed to save settings.');
+                    showToast(data.error || 'Failed to save settings.');
                 }
             } catch (err) {
                 console.error('Save notification settings error:', err);
@@ -513,7 +522,7 @@
             if (btn) btn.innerHTML = `<span>Sending...</span>`;
 
             try {
-                const res = await fetch('/api/notifications/test', { method: 'POST' });
+                const res = await fetch('/api/notifications/test', { method: 'POST', headers: studioApiHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     const channels = (data.logs || []).map(l => `${l.channel}: ${l.status}`).join(' | ');
@@ -545,7 +554,7 @@
 
         async function resendOrderAlert(orderId) {
             try {
-                const res = await fetch(`/api/orders/${orderId}/notify`, { method: 'POST' });
+                const res = await fetch(`/api/orders/${orderId}/notify`, { method: 'POST', headers: studioApiHeaders() });
                 const data = await res.json();
                 if (data.success) {
                     showToast(`Alert dispatched for order ${orderId}!`);
@@ -581,7 +590,7 @@
                 // Load orders
                 let allOrders = [];
                 try {
-                    const ordersRes = await fetch('/api/orders').catch(() => null);
+                    const ordersRes = await fetch('/api/orders', { headers: studioApiHeaders() }).catch(() => null);
                     if (ordersRes && ordersRes.ok) {
                         const ordersData = await ordersRes.json();
                         if (ordersData.orders) allOrders = ordersData.orders;
@@ -766,7 +775,7 @@
             try {
                 const res = await fetch(`/api/orders/${orderId}/status`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: studioApiHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ status: newStatus })
                 }).catch(() => null);
 
