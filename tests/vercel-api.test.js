@@ -19,11 +19,11 @@ const { default: ordersHandler } = await import('../api/orders.js');
 const { default: deliverySearchHandler } = await import('../api/delivery-search.js');
 const { default: deliveryQuoteHandler } = await import('../api/delivery-quote.js');
 const { default: inquiriesHandler } = await import('../api/partner-inquiries.js');
-const { default: orderStatusHandler } = await import('../api/orders/[id]/status.js');
+const { default: orderStatusHandler } = await import('../lib/order-status.js');
 const { default: statsHandler } = await import('../api/stats.js');
 const { default: paymentSettingsHandler } = await import('../api/payments-settings.js');
 const { default: studioAuthHandler } = await import('../api/studio-auth.js');
-const { default: orderTrackingHandler } = await import('../api/orders/track/[query].js');
+const { default: orderTrackingHandler } = await import('../lib/order-tracking.js');
 const { paymongoQrPhReady, verifyPaymongoWebhook } = await import('../lib/paymongo.js');
 
 const hashes = new Map();
