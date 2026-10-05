@@ -3,12 +3,24 @@
   "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     {
+      "source": "/api/delivery/search",
+      "destination": "/api/delivery-search.js"
+    },
+    {
+      "source": "/api/delivery-quote",
+      "destination": "/api/delivery-quote.js"
+    },
+    {
       "source": "/api/notifications/settings",
       "destination": "/api/notifications/settings.js"
     },
     {
       "source": "/api/notifications/test",
       "destination": "/api/notifications/test.js"
+    },
+    {
+      "source": "/api/studio/auth",
+      "destination": "/api/studio-auth.js"
     },
     {
       "source": "/api/orders/:id/status",
@@ -33,6 +45,10 @@
     {
       "source": "/api/stats",
       "destination": "/api/stats.js"
+    },
+    {
+      "source": "/api/payments/paymongo/webhook",
+      "destination": "/api/paymongo-webhook.js"
     },
     {
       "source": "/api/payments/settings",

@@ -11,23 +11,18 @@ export default async function handler(req, res) {
 
   const rawQuery = String(req.query.query || '').trim();
   if (!rawQuery) {
-    return res.status(400).json({ success: false, error: 'Please provide an Order Reference ID or Phone Number.' });
+    return res.status(400).json({ success: false, error: 'Please provide the full Order Reference ID.' });
   }
 
   try {
     const query = rawQuery.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const queryDigits = query.replace(/\D/g, '');
     const orders = Object.values(await getHash('drift:orders'));
     const order = orders.find(item => {
       const orderId = item.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const phone = (item.phone || '').replace(/\D/g, '');
-      return orderId === query ||
-        orderId.endsWith(query) ||
-        query.endsWith(orderId) ||
-        (queryDigits.length >= 7 && (phone.endsWith(queryDigits) || queryDigits.endsWith(phone)));
+      return orderId === query;
     });
 
-    if (!order) return res.status(404).json({ success: false, error: 'No order found matching that reference or phone number.' });
+    if (!order) return res.status(404).json({ success: false, error: 'No order found with that full reference ID.' });
 
     const createdDate = new Date(order.createdAt || Date.now());
     const formatDate = date => date.toLocaleDateString('en-PH', {
@@ -75,14 +70,26 @@ export default async function handler(req, res) {
         description: currentStep === 4 ? 'Package successfully received by customer.' : 'Courier will notify via SMS or call prior to arrival.',
         status: currentStep === 4 ? 'completed' : currentStep === 3 ? 'in_progress' : 'upcoming',
         timestamp: currentStep === 4 ? formatDate(step4Date) : estimatedDelivery,
-        location: order.address || 'Customer Delivery Address',
+        location: 'Delivery destination',
       },
     ];
     const digitsOnly = order.id.replace(/\D/g, '') || '882194';
+    const trackingOrder = {
+      id: order.id,
+      status: order.status,
+      createdAt: order.createdAt,
+      total: order.total,
+      shippingConfirmationRequired: Boolean(order.shippingConfirmationRequired),
+      shippingConfirmationReasons: order.shippingConfirmationReasons || [],
+      deliveryFee: order.deliveryFee,
+      shippingZone: order.shippingZone,
+      shippingOrigin: order.shippingOrigin,
+      ...(order.paymentStatus ? { paymentStatus: order.paymentStatus } : {}),
+    };
 
     return res.status(200).json({
       success: true,
-      order,
+      order: trackingOrder,
       tracking: {
         trackingNumber: `PH-JT-${digitsOnly}EXP`,
         courier: 'J&T Express PH / Drift Priority Courier',

@@ -5,7 +5,7 @@
 
 const STANDARD_PERFUME_SIZES = [
     { volume: "40ml", price: 380 },
-    { volume: "50ml", price: 450 }
+    { volume: "50ml", price: 550 }
 ];
 
 const products = [

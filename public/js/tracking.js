@@ -1,6 +1,16 @@
 // Drift & Co. — Order Tracking System
 // Real-time tracking, parcel delivery timeline & concierge support
 
+function escapeTrackingHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
         // --- DRIFT & CO. ORDER TRACKING SYSTEM ---
         function openOrderTracker(orderId = '') {
             const modal = document.getElementById('orderTrackingModal');
@@ -41,7 +51,7 @@
             if (e) e.preventDefault();
             const input = document.getElementById('trackOrderInput');
             if (!input || !input.value.trim()) {
-                showToast('Please enter an Order ID or Phone Number');
+                showToast('Please enter the full Order Reference ID');
                 return;
             }
             performOrderTracking(input.value.trim());
@@ -51,7 +61,7 @@
             if (e) e.preventDefault();
             const input = document.getElementById('sectionTrackInput');
             if (!input || !input.value.trim()) {
-                showToast('Please enter an Order ID or Phone Number');
+                showToast('Please enter the full Order Reference ID');
                 return;
             }
             openOrderTracker(input.value.trim());
@@ -83,17 +93,24 @@
 
             try {
                 let recents = JSON.parse(localStorage.getItem('drift_recent_orders') || '[]');
-                const samples = ['DRFT-444818', 'DRFT-973766'];
-                const merged = Array.from(new Set([...recents, ...samples])).slice(0, 4);
-
-                container.innerHTML = `
-                    <span class="text-[10px] uppercase font-semibold text-stone-400">Quick Searches:</span>
-                    ${merged.map(id => `
-                        <button type="button" onclick="quickTrackOrder('${id}')" class="px-2 py-0.5 bg-stone-100 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-mono transition-colors cursor-pointer border border-stone-200">
-                            ${id}
-                        </button>
-                    `).join('')}
-                `;
+                if (!Array.isArray(recents)) recents = [];
+                container.replaceChildren();
+                container.classList.toggle('hidden', recents.length === 0);
+                if (recents.length) {
+                    const label = document.createElement('span');
+                    label.className = 'text-[10px] uppercase font-semibold text-stone-400';
+                    label.textContent = 'Recent Orders:';
+                    container.appendChild(label);
+                }
+                Array.from(new Set(recents)).slice(0, 4).forEach(id => {
+                    if (typeof id !== 'string') return;
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'px-2 py-0.5 bg-stone-100 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-mono transition-colors cursor-pointer border border-stone-200';
+                    button.textContent = id;
+                    button.addEventListener('click', () => quickTrackOrder(id));
+                    container.appendChild(button);
+                });
             } catch (e) {}
         }
 
@@ -141,18 +158,27 @@
                 } catch (e) {}
 
                 const cleanQuery = (query || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                const matchedLocal = localOrders.find(o => {
-                    const idClean = (o.id || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-                    const phoneClean = (o.phone || '').replace(/[^0-9]/g, '');
-                    return idClean === cleanQuery || idClean.endsWith(cleanQuery) || (cleanQuery.length >= 7 && phoneClean.endsWith(cleanQuery));
-                });
+                const matchedLocal = localOrders.find(o =>
+                    (o.id || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === cleanQuery
+                );
 
                 if (matchedLocal) {
                     if (loadingState) loadingState.classList.add('hidden');
                     saveRecentTrackedOrder(matchedLocal.id);
+                    const safeOrder = {
+                        id: matchedLocal.id,
+                        status: matchedLocal.status || 'Pending',
+                        createdAt: matchedLocal.createdAt,
+                        total: matchedLocal.total,
+                        shippingConfirmationRequired: Boolean(matchedLocal.shippingConfirmationRequired),
+                        shippingConfirmationReasons: matchedLocal.shippingConfirmationReasons || [],
+                        deliveryFee: matchedLocal.deliveryFee,
+                        shippingZone: matchedLocal.shippingZone,
+                        shippingOrigin: matchedLocal.shippingOrigin,
+                    };
                     const localTrackingData = {
                         success: true,
-                        order: matchedLocal,
+                        order: safeOrder,
                         tracking: {
                             trackingNumber: 'PH-' + (matchedLocal.id || '').replace('DRFT-', '') + '-EXP',
                             courier: 'J&T Express / Flash Express Concierge',
@@ -171,7 +197,7 @@
                 if (loadingState) loadingState.classList.add('hidden');
                 const msgEl = document.getElementById('trackErrorMessage');
                 if (msgEl) {
-                    msgEl.innerText = (data && data.error) || `No order found matching "${query}". Please check your confirmation receipt or mobile number.`;
+                    msgEl.innerText = (data && data.error) || `No order found matching "${query}". Please check the full reference ID on your confirmation receipt.`;
                 }
                 if (errorState) errorState.classList.remove('hidden');
             } catch (err) {
@@ -221,6 +247,11 @@
             };
 
             const currentConfig = statusColors[order.status] || statusColors['Pending'];
+            const totalLabel = order.shippingConfirmationRequired ? 'Items Subtotal (Shipping to Confirm)' : 'Total';
+            const totalDisplay = `₱${Number(order.total).toFixed(2)}${order.shippingConfirmationRequired ? ' (provisional)' : ''}`;
+            const whatsappAmount = order.shippingConfirmationRequired
+                ? 'shipping charge awaiting confirmation'
+                : `Total: ₱${Number(order.total).toFixed(2)}`;
 
             const createdDateFormatted = new Date(order.createdAt).toLocaleDateString('en-PH', {
                 month: 'short',
@@ -237,8 +268,8 @@
                         <div>
                             <span class="text-[10px] uppercase tracking-widest text-[#C5A059] font-semibold block">Order Reference</span>
                             <div class="flex items-center gap-2 mt-0.5">
-                                <span class="font-mono text-xl sm:text-2xl font-bold tracking-wider text-white">${order.id}</span>
-                                <button onclick="copyToClipboard('${order.id}', 'Order ID copied!')" class="p-1 hover:text-[#C5A059] transition-colors cursor-pointer text-stone-400" title="Copy Order ID">
+                                <span class="font-mono text-xl sm:text-2xl font-bold tracking-wider text-white">${escapeTrackingHtml(order.id)}</span>
+                                <button type="button" data-copy-order-id class="p-1 hover:text-[#C5A059] transition-colors cursor-pointer text-stone-400" title="Copy Order ID">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                 </button>
                             </div>
@@ -255,13 +286,13 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
                         <div class="space-y-1">
                             <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-medium">Estimated Arrival</span>
-                            <span class="text-sm font-semibold text-[#C5A059]">${tracking.estimatedDelivery}</span>
+                            <span class="text-sm font-semibold text-[#C5A059]">${escapeTrackingHtml(tracking.estimatedDelivery)}</span>
                             <p class="text-[11px] text-stone-300 font-light">Express nationwide fragile parcel courier</p>
                         </div>
                         <div class="space-y-1 sm:text-right">
                             <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-medium">Courier & Waybill</span>
-                            <span class="font-mono text-xs font-semibold text-white">${tracking.trackingNumber}</span>
-                            <p class="text-[11px] text-stone-400">${tracking.courier}</p>
+                            <span class="font-mono text-xs font-semibold text-white">${escapeTrackingHtml(tracking.trackingNumber)}</span>
+                            <p class="text-[11px] text-stone-400">${escapeTrackingHtml(tracking.courier)}</p>
                         </div>
                     </div>
                 </div>
@@ -273,7 +304,7 @@
                             <svg class="w-4 h-4 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <span>Atelier & Courier Timeline</span>
                         </span>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B]">Step ${tracking.currentStep} of 4</span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B]">Step ${escapeTrackingHtml(tracking.currentStep)} of 4</span>
                     </div>
 
                     <div class="space-y-4 relative pl-2">
@@ -295,25 +326,25 @@
                                         isInProgress ? 'bg-[#C5A059] text-stone-950 ring-4 ring-[#C5A059]/20 animate-pulse' :
                                         'bg-stone-100 text-stone-400 border border-stone-300'
                                     }">
-                                        ${isCompleted ? '✓' : item.step}
+                                        ${isCompleted ? '✓' : escapeTrackingHtml(item.step)}
                                     </div>
 
                                     <!-- Step Details -->
                                     <div class="flex-1 pb-3 text-xs">
                                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                                             <span class="font-semibold ${isCompleted ? 'text-stone-900' : isInProgress ? 'text-[#9E7D3B] font-bold' : 'text-stone-500'}">
-                                                ${item.title}
+                                                ${escapeTrackingHtml(item.title)}
                                             </span>
                                             <span class="text-[10px] font-mono ${isCompleted || isInProgress ? 'text-stone-600 font-medium' : 'text-stone-400'}">
-                                                ${item.timestamp}
+                                                ${escapeTrackingHtml(item.timestamp)}
                                             </span>
                                         </div>
                                         <p class="text-stone-600 text-[11px] mt-0.5 font-light leading-relaxed">
-                                            ${item.description}
+                                            ${escapeTrackingHtml(item.description)}
                                         </p>
                                         <span class="inline-flex items-center gap-1 text-[10px] text-stone-400 mt-1">
                                             <span>📍</span>
-                                            <span>${item.location}</span>
+                                            <span>${escapeTrackingHtml(item.location)}</span>
                                         </span>
                                     </div>
                                 </div>
@@ -322,56 +353,22 @@
                     </div>
                 </div>
 
-                <!-- Recipient & Delivery Details -->
+                <!-- Delivery summary without customer address or contact information -->
                 <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs text-xs space-y-2">
                     <span class="text-[11px] uppercase tracking-wider font-semibold text-stone-800 block border-b border-stone-200 pb-1.5">
-                        Parcel Delivery Destination
+                        Delivery summary
                     </span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-700 pt-1">
-                        <div>
-                            <p><strong class="text-stone-900">Recipient:</strong> ${order.customerName}</p>
-                            <p class="pt-0.5"><strong class="text-stone-900">Mobile:</strong> <span class="font-mono">${order.phone}</span></p>
-                            <p class="pt-0.5"><strong class="text-stone-900">Payment:</strong> <span class="text-stone-800">${order.paymentMethod}</span></p>
-                        </div>
-                        <div>
-                            <p><strong class="text-stone-900">Delivery Address:</strong> ${order.address || 'Standard Delivery'}</p>
-                            ${order.notes ? `<p class="pt-0.5 text-stone-600"><strong class="text-stone-900">Notes:</strong> ${order.notes}</p>` : ''}
-                        </div>
+                    <div class="space-y-1 text-stone-700 pt-1">
+                        ${order.shippingConfirmationRequired
+                            ? `<p class="text-amber-800"><strong>Shipping:</strong> Charge to be confirmed by Drift & Co. before dispatch.</p>`
+                            : Number.isFinite(Number(order.deliveryFee))
+                                ? `<p><strong class="text-stone-900">${order.shippingZone ? 'J&T delivery' : 'Delivery charge'}:</strong> ${order.deliveryFee === 0 ? 'Free' : `₱${Number(order.deliveryFee).toFixed(2)}`}${order.shippingZone ? ` (${escapeTrackingHtml(order.shippingZone)})` : ''}</p>`
+                                : ''}
+                        ${order.shippingOrigin ? `<p><strong class="text-stone-900">Dispatch office:</strong> ${escapeTrackingHtml(order.shippingOrigin)}</p>` : ''}
                     </div>
-                </div>
-
-                <!-- Fragrance Package Inclusions -->
-                <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs text-xs space-y-3">
-                    <div class="flex items-center justify-between border-b border-stone-100 pb-2">
-                        <span class="text-[11px] uppercase tracking-wider font-semibold text-stone-900">
-                            Fragrance Package Items (${(order.items || []).length})
-                        </span>
-                        <span class="text-[10px] uppercase font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-xs">
-                            30% High-Grade Oil Formula
-                        </span>
-                    </div>
-
-                    <div class="divide-y divide-stone-100 max-h-56 overflow-y-auto pr-1 space-y-2">
-                        ${(order.items || []).map(item => `
-                            <div class="flex items-center justify-between gap-3 pt-2">
-                                <div class="flex items-center gap-3">
-                                    <img src="${item.image || 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=200'}" alt="${item.name}" class="w-10 h-10 object-cover rounded-xs border border-stone-200 flex-shrink-0">
-                                    <div>
-                                        <p class="font-cormorant font-semibold text-sm text-stone-900 leading-tight">${item.name}</p>
-                                        <p class="text-[10px] text-stone-500">${item.volume || '50ml Eau de Parfum'} • Qty: ${item.qty}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <span class="font-medium text-stone-900">₱${(item.price * item.qty).toFixed(2)}</span>
-                                    <span class="block text-[10px] text-stone-400">₱${Number(item.price).toFixed(2)} each</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-
                     <div class="border-t border-stone-200 pt-2 flex items-center justify-between text-sm">
-                        <span class="font-semibold text-stone-800">Total Payable:</span>
-                        <span class="font-bold text-[#C5A059] text-base">₱${Number(order.total).toFixed(2)}</span>
+                        <span class="font-semibold text-stone-800">${totalLabel}:</span>
+                        <span class="font-bold text-[#C5A059] text-base">${totalDisplay}</span>
                     </div>
                 </div>
 
@@ -384,21 +381,28 @@
                         <span class="text-[10px] text-stone-500">Need to modify details?</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <a href="https://api.whatsapp.com/send?phone=639569310005&text=Hello%20Drift%20%26%20Co.%20Concierge%2C%20inquiring%20about%20my%20order%20%23${order.id}%20(Total%3A%20%E2%82%B1${order.total.toFixed(2)})" target="_blank" class="py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs">
+                        <a href="https://api.whatsapp.com/send?phone=639569310005&amp;text=${encodeURIComponent(`Hello Drift & Co. Concierge, inquiring about my order #${order.id} (${whatsappAmount})`)}" target="_blank" rel="noopener noreferrer" class="py-2 px-3 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs">
                             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
                             <span>WhatsApp</span>
                         </a>
-                        <a href="sms:09569310005?body=Hi%20Drift%20%26%20Co.%2C%20inquiring%20about%20my%20order%20%23${order.id}" class="py-2 px-3 bg-[#1A1817] hover:bg-[#C5A059] text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs">
+                        <a href="sms:09569310005?body=${encodeURIComponent(`Hi Drift & Co., inquiring about my order #${order.id}`)}" class="py-2 px-3 bg-[#1A1817] hover:bg-[#C5A059] text-white text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs">
                             <svg class="w-3.5 h-3.5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
                             <span>SMS Concierge</span>
                         </a>
-                        <button onclick="copyTrackingSummary('${order.id}', '${order.status}', '${tracking.trackingNumber}', '${order.total}', '${(order.address || '').replace(/'/g, "\\'")}')" class="py-2 px-3 bg-white border border-stone-300 hover:border-black text-stone-800 text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                        <button type="button" data-copy-tracking-summary class="py-2 px-3 bg-white border border-stone-300 hover:border-black text-stone-800 text-[11px] font-semibold uppercase tracking-wider rounded-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
                             <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             <span>Copy Details</span>
                         </button>
                     </div>
                 </div>
             `;
+
+            container.querySelector('[data-copy-order-id]')?.addEventListener('click', () => {
+                copyToClipboard(String(order.id), 'Order ID copied!');
+            });
+            container.querySelector('[data-copy-tracking-summary]')?.addEventListener('click', () => {
+                copyTrackingSummary(order.id, order.status, tracking.trackingNumber, order.total, order.shippingConfirmationRequired);
+            });
         }
 
         function copyToClipboard(text, msg = 'Copied to clipboard!') {
@@ -409,13 +413,12 @@
             });
         }
 
-        function copyTrackingSummary(orderId, status, trackingNo, total, address) {
+        function copyTrackingSummary(orderId, status, trackingNo, total, shippingConfirmationRequired = false) {
             const summary = `DRIFT & CO. PARCEL TRACKING SUMMARY\n` +
                 `Order ID: ${orderId}\n` +
                 `Status: ${status}\n` +
                 `Courier Waybill: ${trackingNo}\n` +
-                `Total: ₱${Number(total).toFixed(2)}\n` +
-                `Delivery Address: ${address}\n` +
+                `${shippingConfirmationRequired ? 'Items subtotal (shipping to confirm)' : 'Total'}: ₱${Number(total).toFixed(2)}\n` +
                 `Concierge Support: 09569310005 | drift&co2010@gmail.com`;
             copyToClipboard(summary, 'Tracking summary copied!');
         }

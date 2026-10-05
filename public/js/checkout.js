@@ -2,6 +2,237 @@
 // BPI, BDO, GCash integration, order placement & partner inquiries
 
 window.lastOrderDetails = null;
+window.deliveryQuote = null;
+window.selectedDeliveryQuoteToken = '';
+
+let deliveryMap = null;
+let deliveryMapMarker = null;
+let pendingMapLocation = null;
+let deliveryMapReady = false;
+let quoteRequestId = 0;
+let addressSearchRequestId = 0;
+window.deliveryPricing = null;
+const PILA_TOWN_CENTER = [14.2376712, 121.3644522];
+
+function getCheckoutSubtotal() {
+    return (window.cart || []).reduce((sum, item) => sum + (Number(item.price) * Number(item.qty)), 0);
+}
+
+function getCheckoutShippingPricing() {
+    return (window.cart || []).reduce((pricing, item) => {
+        const quantity = Number(item.qty);
+        const lineSubtotal = Number(item.price) * quantity;
+        if (item.volume === 'Starter Kit') {
+            pricing.partnerKitCount += quantity;
+        } else {
+            pricing.bottleSubtotal += lineSubtotal;
+            pricing.shippingWeightGrams += 500 * quantity;
+        }
+        return pricing;
+    }, { bottleSubtotal: 0, shippingWeightGrams: 0, partnerKitCount: 0 });
+}
+
+function updateCheckoutTotals() {
+    const subtotal = getCheckoutSubtotal();
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const deliveryEl = document.getElementById('checkoutDeliveryFee');
+    const totalEl = document.getElementById('checkoutTotalAmount');
+    const countEl = document.getElementById('checkoutItemCount');
+    const totalQty = (window.cart || []).reduce((sum, item) => sum + Number(item.qty), 0);
+
+    if (countEl) countEl.innerText = `${totalQty} item${totalQty === 1 ? '' : 's'} in bag`;
+    if (subtotalEl) subtotalEl.innerText = `₱${subtotal.toFixed(2)}`;
+
+    const quote = window.deliveryQuote;
+    if (!quote) {
+        if (deliveryEl) deliveryEl.innerText = 'Select an address';
+        if (totalEl) totalEl.innerText = 'Select an address';
+        const totalLabel = document.getElementById('checkoutTotalLabel');
+        if (totalLabel) totalLabel.innerText = 'Total';
+        return;
+    }
+
+    const cartPricing = getCheckoutShippingPricing();
+    if (quote.subtotal !== subtotal
+        || quote.bottleSubtotal !== cartPricing.bottleSubtotal
+        || quote.shippingWeightGrams !== cartPricing.shippingWeightGrams
+        || quote.partnerKitCount !== cartPricing.partnerKitCount) {
+        window.deliveryQuote = null;
+        window.selectedDeliveryQuoteToken = '';
+        if (deliveryEl) deliveryEl.innerText = 'Select address again';
+        if (totalEl) totalEl.innerText = 'Recalculate delivery';
+        setDeliveryAddressStatus('Your bag changed. Select the delivery address again to refresh the J&T rate.', true);
+        return;
+    }
+
+    const deliveryFee = quote.deliveryFee;
+    const manualConfirmation = quote.shippingConfirmationReasons?.length > 0;
+    if (deliveryEl) {
+        if (deliveryFee === null) {
+            deliveryEl.innerText = 'To be confirmed';
+        } else {
+            deliveryEl.innerText = deliveryFee === 0
+                ? `Free (${quote.zone || 'zone pending'})`
+                : `₱${deliveryFee.toFixed(2)} (${quote.zone})`;
+        }
+    }
+    if (totalEl) {
+        const provisionalTotal = subtotal + (deliveryFee || 0);
+        totalEl.innerText = `₱${provisionalTotal.toFixed(2)}${manualConfirmation ? ' + shipping TBD' : ''}`;
+    }
+    const totalLabel = document.getElementById('checkoutTotalLabel');
+    if (totalLabel) totalLabel.innerText = manualConfirmation ? 'Provisional total' : 'Total';
+}
+
+function setDeliveryAddressStatus(message, isError = false) {
+    const status = document.getElementById('deliveryAddressStatus');
+    if (!status) return;
+    status.innerText = message;
+    status.classList.toggle('text-red-600', isError);
+    status.classList.toggle('text-stone-500', !isError);
+}
+
+function initializeDeliveryMap() {
+    if (deliveryMapReady) {
+        requestAnimationFrame(() => deliveryMap.invalidateSize());
+        return;
+    }
+    if (!window.L) {
+        setDeliveryAddressStatus('The map could not be loaded. Please try again later.', true);
+        return;
+    }
+
+    const mapElement = document.getElementById('deliveryMap');
+    if (!mapElement) return;
+    deliveryMap = L.map(mapElement).setView(PILA_TOWN_CENTER, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+    }).addTo(deliveryMap);
+
+    deliveryMap.on('click', event => {
+        pendingMapLocation = event.latlng;
+        window.deliveryQuote = null;
+        window.selectedDeliveryQuoteToken = '';
+        document.getElementById('orderAddress').value = '';
+        updateCheckoutTotals();
+        if (deliveryMapMarker) deliveryMapMarker.setLatLng(event.latlng);
+        else deliveryMapMarker = L.marker(event.latlng).addTo(deliveryMap);
+        document.getElementById('useDeliveryMapPin').disabled = false;
+        setDeliveryAddressStatus('Map pin selected. Choose “Use selected map pin” to verify the address and calculate delivery.');
+    });
+    document.getElementById('deliveryAddressSearchButton').addEventListener('click', searchDeliveryAddress);
+    document.getElementById('deliveryAddressSearch').addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            searchDeliveryAddress();
+        }
+    });
+    document.getElementById('useDeliveryMapPin').addEventListener('click', () => {
+        if (pendingMapLocation) selectDeliveryLocation(pendingMapLocation.lat, pendingMapLocation.lng);
+    });
+    deliveryMapReady = true;
+    setTimeout(() => deliveryMap.invalidateSize(), 100);
+}
+
+async function searchDeliveryAddress() {
+    const searchInput = document.getElementById('deliveryAddressSearch');
+    const resultsContainer = document.getElementById('deliveryAddressResults');
+    const query = searchInput.value.trim();
+    if (query.length < 3) {
+        setDeliveryAddressStatus('Enter at least 3 characters to search for an address.', true);
+        return;
+    }
+
+    const requestId = ++addressSearchRequestId;
+    resultsContainer.replaceChildren();
+    resultsContainer.classList.remove('hidden');
+    setDeliveryAddressStatus('Searching for matching addresses...');
+
+    try {
+        const response = await fetch(`/api/delivery/search?q=${encodeURIComponent(query)}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Unable to search for this address.');
+        }
+        if (requestId !== addressSearchRequestId) return;
+        if (!result.addresses.length) {
+            setDeliveryAddressStatus('No matching addresses found. Try a nearby landmark or select the map.', true);
+            return;
+        }
+
+        result.addresses.forEach(address => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'block w-full px-3 py-2 text-left text-[11px] text-stone-700 hover:bg-[#FAF8F5]';
+            option.textContent = address.address;
+            option.addEventListener('click', () => {
+                resultsContainer.classList.add('hidden');
+                deliveryMap.setView([address.latitude, address.longitude], 16);
+                selectDeliveryLocation(address.latitude, address.longitude);
+            });
+            resultsContainer.appendChild(option);
+        });
+        setDeliveryAddressStatus('Choose the matching address from the results.');
+    } catch (error) {
+        if (requestId !== addressSearchRequestId) return;
+        setDeliveryAddressStatus(error.message || 'Unable to search for this address.', true);
+    }
+}
+
+async function selectDeliveryLocation(latitude, longitude) {
+    const requestId = ++quoteRequestId;
+    window.deliveryQuote = null;
+    window.selectedDeliveryQuoteToken = '';
+    document.getElementById('orderAddress').value = '';
+    document.getElementById('useDeliveryMapPin').disabled = true;
+    updateCheckoutTotals();
+    setDeliveryAddressStatus('Verifying the location and checking J&T rates...');
+
+    try {
+        const response = await fetch('/api/delivery-quote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+                latitude,
+                longitude,
+                items: window.cart || []
+            })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Unable to calculate the delivery charge.');
+        }
+        if (requestId !== quoteRequestId) return;
+        window.deliveryQuote = result;
+        window.deliveryPricing = result.pricing;
+        window.selectedDeliveryQuoteToken = result.deliveryToken;
+        pendingMapLocation = { lat: result.latitude, lng: result.longitude };
+        if (deliveryMapMarker) deliveryMapMarker.setLatLng(pendingMapLocation);
+        else deliveryMapMarker = L.marker(pendingMapLocation).addTo(deliveryMap);
+        document.getElementById('orderAddress').value = result.address;
+        updateCheckoutTotals();
+        const rateText = result.deliveryFee === null
+            ? 'Shipping needs manual confirmation.'
+            : result.deliveryFee === 0
+                ? `J&T delivery is free for the bottle subtotal (${result.zone || 'zone pending'}).`
+                : `J&T ${result.zone} rate: ₱${result.deliveryFee.toFixed(2)}.`;
+        const manualText = result.shippingConfirmationReasons?.length
+            ? ` ${result.shippingConfirmationReasons.join(' ')}`
+            : '';
+        setDeliveryAddressStatus(
+            `${rateText} Nearest office: ${result.origin} (${result.distanceKm.toFixed(2)} km).${manualText}`,
+            false,
+        );
+    } catch (error) {
+        if (requestId !== quoteRequestId) return;
+        window.deliveryQuote = null;
+        setDeliveryAddressStatus(error.message || 'Unable to verify the selected address.', true);
+        updateCheckoutTotals();
+    }
+}
 
         // --- Checkout Modal Handlers (Connected to /api/orders) ---
         function openCheckoutModal() {
@@ -12,13 +243,8 @@ window.lastOrderDetails = null;
             if (formContainer) formContainer.classList.remove('hidden');
             if (successView) successView.classList.add('hidden');
 
-            const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            
-            const countEl = document.getElementById('checkoutItemCount');
-            const totalEl = document.getElementById('checkoutTotalAmount');
-            if (countEl) countEl.innerText = `${totalQty} bottle${totalQty > 1 ? 's' : ''} in bag`;
-            if (totalEl) totalEl.innerText = `₱${subtotal.toFixed(2)}`;
+            updateCheckoutTotals();
+            initializeDeliveryMap();
 
             if (typeof syncPaymentMethodDropdown === 'function') syncPaymentMethodDropdown();
             handlePaymentMethodChange();
@@ -52,6 +278,10 @@ window.lastOrderDetails = null;
                 showToast('Your shopping bag is empty. Please add a fragrance first.');
                 return;
             }
+            if (!window.deliveryQuote || !window.selectedDeliveryQuoteToken) {
+                showToast('Search for an address or select a map location and wait for the delivery quote.');
+                return;
+            }
 
             const btn = document.getElementById('submitOrderBtn');
             if (btn) {
@@ -63,7 +293,9 @@ window.lastOrderDetails = null;
             const phone = document.getElementById('orderPhone').value;
             const paymentMethod = document.getElementById('orderPaymentMethod').value;
             const paymentReference = document.getElementById('orderPaymentReference')?.value || '';
+            const isQrPhPayment = paymentMethod === 'QR Ph';
             const address = document.getElementById('orderAddress').value;
+            const addressDetails = document.getElementById('orderAddressDetails').value;
             const notes = document.getElementById('orderNotes')?.value || '';
             const total = bag.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
@@ -73,6 +305,8 @@ window.lastOrderDetails = null;
                 paymentMethod,
                 paymentReference,
                 address,
+                addressDetails,
+                deliveryQuoteToken: window.selectedDeliveryQuoteToken,
                 notes,
                 items: bag,
                 total
@@ -88,20 +322,19 @@ window.lastOrderDetails = null;
             console.group('🛒 [DRIFT & CO. CHECKOUT NETWORK DIAGNOSTICS]');
             console.log('⏰ [TIMESTAMP]:', new Date().toISOString());
             console.log('🌐 [REQUEST URL]:', window.location.origin + '/api/orders');
-            console.log('📤 [FULL REQUEST HEADERS]:', requestHeaders);
-            console.log('📦 [FULL REQUEST PAYLOAD]:', payload);
-            console.log('📦 [PAYLOAD JSON]:\n' + JSON.stringify(payload, null, 2));
+            console.log('📦 [ORDER SUMMARY]:', {
+                itemCount: bag.reduce((sum, item) => sum + Number(item.qty), 0),
+                paymentMethod
+            });
 
             const diagnosis = {
                 timestamp: new Date().toISOString(),
                 requestUrl: window.location.origin + '/api/orders',
-                requestHeaders,
-                payload,
+                itemCount: bag.reduce((sum, item) => sum + Number(item.qty), 0),
+                paymentMethod,
                 statusCode: null,
                 statusText: null,
                 responseHeaders: {},
-                rawResponseBody: null,
-                parsedResponseData: null,
                 networkError: null,
                 fallbackTriggered: false
             };
@@ -144,50 +377,39 @@ window.lastOrderDetails = null;
                     }
 
                     console.log(`📡 [RESPONSE STATUS CODE]: ${res.status} (${res.statusText})`);
-                    console.log('📋 [RESPONSE HEADERS]:', diagnosis.responseHeaders);
-
                     // Read complete raw response body
                     let responseBodyText = '';
                     try {
                         responseBodyText = await res.text();
-                        diagnosis.rawResponseBody = responseBodyText;
                     } catch (readErr) {
-                        console.error('⚠️ [ERROR READING RESPONSE BODY]:', readErr);
+                        console.error('Unable to read the order response:', readErr);
                         responseBodyText = '';
                     }
-
-                    console.log('📄 [FULL RESPONSE BODY (RAW)]:\n', responseBodyText || '(empty response body)');
 
                     // Attempt parsing JSON
                     let data = null;
                     if (responseBodyText) {
                         try {
                             data = JSON.parse(responseBodyText);
-                            diagnosis.parsedResponseData = data;
-                            console.log('🔍 [FULL RESPONSE BODY (PARSED JSON)]:', data);
                         } catch (parseErr) {
-                            console.warn('⚠️ [NOTE: RESPONSE IS NOT JSON - Likely HTML 404/500/502 page from host]:', parseErr.message);
+                            console.warn('Order service returned an invalid response format:', parseErr.message);
                         }
                     }
 
                     if (res.ok && data && data.success && data.order) {
-                        console.log('✅ [CHECKOUT SUCCESS]: Backend confirmed order placement!', data.order);
                         currentPlacedOrder = data.order;
+                        if (isQrPhPayment) {
+                            if (typeof data.payment?.qrCodeDataUrl !== 'string') {
+                                throw new Error('The QR Ph code was not returned. Please retry or contact the store.');
+                            }
+                            currentPlacedOrder.qrCodeDataUrl = data.payment.qrCodeDataUrl;
+                        }
                     } else {
-                        diagnosis.fallbackTriggered = true;
-                        console.error('❌ [BACKEND RETURNED ERROR RESPONSE]:', {
-                            httpStatus: res.status,
-                            statusText: res.statusText,
-                            responseHeaders: diagnosis.responseHeaders,
-                            responseBody: data || responseBodyText
-                        });
-                        console.warn('⚡ [FAILSAFE ACTIVATED]: Seamlessly saving order locally so customer is not blocked.');
-                        currentPlacedOrder = createLocalOrder(payload);
+                        console.error('Order service rejected the request:', res.status, data?.error || res.statusText);
+                        throw new Error(data?.error || 'The order could not be confirmed. Please retry.');
                     }
                 } else {
-                    diagnosis.fallbackTriggered = true;
-                    console.warn('⚡ [FAILSAFE ACTIVATED]: Fetch failed without response. Saving order locally.');
-                    currentPlacedOrder = createLocalOrder(payload);
+                    throw new Error('Could not connect to the order service. Your order was not confirmed; please retry.');
                 }
 
                 window.lastOrderDetails = currentPlacedOrder;
@@ -200,11 +422,8 @@ window.lastOrderDetails = null;
                     stack: err.stack,
                     full: String(err)
                 };
-                diagnosis.fallbackTriggered = true;
-                console.error('💥 [UNEXPECTED EXCEPTION IN CHECKOUT]:', err);
-                currentPlacedOrder = createLocalOrder(payload);
-                window.lastOrderDetails = currentPlacedOrder;
-                renderOrderSuccessUI(currentPlacedOrder);
+                console.error('Checkout failed:', err);
+                showToast(err.message || 'Unable to place your order. Please retry.');
             } finally {
                 console.log('💡 TIP: You can inspect the complete diagnosis object anytime via: window.__lastCheckoutDiagnosis');
                 console.groupEnd();
@@ -213,59 +432,6 @@ window.lastOrderDetails = null;
                     btn.innerHTML = `<span>Confirm & Place Order</span>`;
                 }
             }
-        }
-
-        // Resilient Local Order Generator for Vercel Static & Offline Environments
-        function createLocalOrder(payload) {
-            const orderId = 'DRFT-' + Math.floor(100000 + Math.random() * 900000);
-            const calculatedTotal = Number(payload.total) || (payload.items || []).reduce((sum, item) => sum + (item.price * item.qty), 0);
-
-            const order = {
-                id: orderId,
-                customerName: String(payload.customerName || 'Customer').trim(),
-                phone: String(payload.phone || '').trim(),
-                address: String(payload.address || '').trim(),
-                paymentMethod: String(payload.paymentMethod || 'Cash on Delivery (COD)').trim(),
-                paymentReference: payload.paymentReference ? String(payload.paymentReference).trim() : undefined,
-                notes: payload.notes ? String(payload.notes).trim() : undefined,
-                items: payload.items || [],
-                total: calculatedTotal,
-                status: 'Pending',
-                createdAt: new Date().toISOString(),
-                notificationsSent: [
-                    { channel: 'Concierge Booking', recipient: payload.phone, status: 'Confirmed' }
-                ]
-            };
-
-            // Store persistently in browser
-            try {
-                let stored = JSON.parse(localStorage.getItem('drift_local_orders') || '[]');
-                if (!Array.isArray(stored)) stored = [];
-                stored.unshift(order);
-                localStorage.setItem('drift_local_orders', JSON.stringify(stored));
-
-                let recents = JSON.parse(localStorage.getItem('drift_recent_orders') || '[]');
-                if (!Array.isArray(recents)) recents = [];
-                recents.unshift(order.id);
-                localStorage.setItem('drift_recent_orders', JSON.stringify(recents));
-                localStorage.setItem('drift_last_order_id', order.id);
-            } catch (e) {}
-
-            // Send instant background push notification via ntfy.sh (free, zero server needed)
-            try {
-                const itemsSummary = (order.items || []).map(i => `${i.name} (${i.qty}x)`).join(', ');
-                fetch('https://ntfy.sh/drift-co-orders-alert', {
-                    method: 'POST',
-                    headers: {
-                        'Title': `New Drift & Co. Order: ${order.customerName} (₱${order.total.toFixed(2)})`,
-                        'Priority': 'urgent',
-                        'Tags': 'shopping_bags,perfume'
-                    },
-                    body: `Order #${order.id}\nCustomer: ${order.customerName} (${order.phone})\nTotal: ₱${order.total.toFixed(2)} (${order.paymentMethod})\nDelivery: ${order.address}\nItems: ${itemsSummary}`
-                }).catch(() => {});
-            } catch (e) {}
-
-            return order;
         }
 
         // Unified Success Screen Renderer
@@ -278,8 +444,49 @@ window.lastOrderDetails = null;
             document.getElementById('successCustomerName').innerText = order.customerName;
             document.getElementById('successCustomerPhone').innerText = order.phone;
             document.getElementById('successAddress').innerText = order.address || 'Address provided';
-            document.getElementById('successTotal').innerText = `₱${Number(order.total || 0).toFixed(2)}`;
+            document.getElementById('successTotal').innerText = `₱${Number(order.total || 0).toFixed(2)}${order.shippingConfirmationRequired ? ' (provisional)' : ''}`;
+            const subtotalRow = document.getElementById('successSubtotalRow');
+            const deliveryFeeRow = document.getElementById('successDeliveryFeeRow');
+            subtotalRow?.classList.add('hidden');
+            deliveryFeeRow?.classList.add('hidden');
+            if (Number.isFinite(Number(order.subtotal)) && subtotalRow) {
+                subtotalRow.classList.remove('hidden');
+                document.getElementById('successSubtotal').innerText = `₱${Number(order.subtotal).toFixed(2)}`;
+            }
+            if (order.deliveryFee !== null && Number.isFinite(Number(order.deliveryFee)) && deliveryFeeRow) {
+                deliveryFeeRow.classList.remove('hidden');
+                document.getElementById('successDeliveryFee').innerText = Number(order.deliveryFee) === 0
+                    ? (order.shippingConfirmationRequired ? 'Free for bottles; remaining shipping to confirm' : 'Free')
+                    : `₱${Number(order.deliveryFee).toFixed(2)}${order.shippingConfirmationRequired ? ' for bottles; remaining shipping to confirm' : ` (${order.shippingZone || 'J&T'})`}`;
+            } else if (order.shippingConfirmationRequired && deliveryFeeRow) {
+                deliveryFeeRow.classList.remove('hidden');
+                document.getElementById('successDeliveryFee').innerText = 'Shipping charge to be confirmed';
+            }
             document.getElementById('successPaymentMethod').innerText = order.paymentMethod;
+            const isQrPhPayment = order.paymentMethod === 'QR Ph';
+            const successIcon = document.getElementById('successOrderIcon');
+            if (successIcon) {
+                successIcon.innerText = isQrPhPayment ? '₱' : '✓';
+                successIcon.className = isQrPhPayment
+                    ? 'w-14 h-14 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-xs'
+                    : 'w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-xs';
+            }
+            const successTitle = document.getElementById('successOrderTitle');
+            const successSubtitle = document.getElementById('successOrderSubtitle');
+            if (successTitle) successTitle.innerText = isQrPhPayment ? 'Scan to Pay' : 'Order Confirmed!';
+            if (successSubtitle) successSubtitle.innerText = isQrPhPayment
+                ? 'Your order is reserved until PayMongo confirms your payment.'
+                : order.shippingConfirmationRequired
+                    ? 'Your order is received. Drift & Co. will confirm the final shipping charge before dispatch.'
+                    : 'Notification & order receipt dispatched';
+
+            const qrBox = document.getElementById('successQrPaymentBox');
+            const qrImage = document.getElementById('successQrCode');
+            if (qrBox && qrImage) {
+                qrBox.classList.toggle('hidden', !isQrPhPayment || !order.qrCodeDataUrl);
+                if (isQrPhPayment && order.qrCodeDataUrl) qrImage.src = order.qrCodeDataUrl;
+                else qrImage.removeAttribute('src');
+            }
 
             const refRow = document.getElementById('successPaymentRefRow');
             const refVal = document.getElementById('successPaymentRef');
@@ -292,17 +499,29 @@ window.lastOrderDetails = null;
                 refRow.classList.add('hidden');
             }
 
-            renderSuccessBankDetails(order.paymentMethod, order.total);
+            if (order.shippingConfirmationRequired) {
+                document.getElementById('successBankDetailsBox')?.classList.add('hidden');
+            } else {
+                renderSuccessBankDetails(order.paymentMethod, order.total);
+            }
 
             // Display notification dispatch report
             const notifStatusEl = document.getElementById('successNotificationStatus');
+            const paymentBanner = document.getElementById('successPaymentBanner');
             if (notifStatusEl) {
-                if (order.notificationsSent && order.notificationsSent.length > 0) {
+                if (isQrPhPayment) {
+                    notifStatusEl.innerText = order.paymentStatus === 'Paid'
+                        ? 'Payment received and verified securely by PayMongo.'
+                        : 'Payment status: Pending — waiting for PayMongo confirmation.';
+                } else if (order.notificationsSent && order.notificationsSent.length > 0) {
                     const channels = order.notificationsSent.map(l => l.channel).join(', ');
                     notifStatusEl.innerText = `Alert dispatched via: ${channels}`;
                 } else {
                     notifStatusEl.innerText = `Order confirmed. Dispatch concierge notified.`;
                 }
+            }
+            if (paymentBanner && isQrPhPayment && order.paymentStatus !== 'Paid') {
+                paymentBanner.className = 'bg-amber-50 border border-amber-200 text-amber-900 text-[11px] p-2.5 rounded-xs flex items-center justify-center gap-2 max-w-sm mx-auto';
             }
 
             // Play sound chime for instant feedback
@@ -313,6 +532,50 @@ window.lastOrderDetails = null;
             if (typeof updateCartUI === 'function') updateCartUI();
             if (typeof loadStats === 'function') loadStats();
             showToast(`Order ${order.id} placed successfully!`);
+            if (isQrPhPayment && order.paymentStatus !== 'Paid') pollQrPhPaymentStatus(order.id);
+        }
+
+        async function pollQrPhPaymentStatus(orderId) {
+            const deadline = Date.now() + 30 * 60 * 1000;
+            while (Date.now() < deadline) {
+                await new Promise(resolve => setTimeout(resolve, 8000));
+                try {
+                    const response = await fetch(`/api/orders/track/${encodeURIComponent(orderId)}`);
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    const paymentStatus = data.order?.paymentStatus;
+                    if (paymentStatus === 'Paid') {
+                        const status = document.getElementById('successNotificationStatus');
+                        if (status) status.innerText = 'Payment received and verified securely by PayMongo.';
+                        const banner = document.getElementById('successPaymentBanner');
+                        if (banner) banner.className = 'bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] p-2.5 rounded-xs flex items-center justify-center gap-2 max-w-sm mx-auto';
+                        const title = document.getElementById('successOrderTitle');
+                        if (title) title.innerText = 'Payment Received';
+                        const subtitle = document.getElementById('successOrderSubtitle');
+                        if (subtitle) subtitle.innerText = 'PayMongo verified your QR Ph payment.';
+                        const qrBox = document.getElementById('successQrPaymentBox');
+                        if (qrBox) qrBox.classList.add('hidden');
+                        const icon = document.getElementById('successOrderIcon');
+                        if (icon) {
+                            icon.innerText = '✓';
+                            icon.className = 'w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-xs';
+                        }
+                        showToast(`Payment received for order ${orderId}.`);
+                        return;
+                    }
+                    if (paymentStatus === 'Expired' || paymentStatus === 'Failed') {
+                        const status = document.getElementById('successNotificationStatus');
+                        if (status) status.innerText = `Payment ${paymentStatus.toLowerCase()}. Please place a new order or contact the store.`;
+                        const title = document.getElementById('successOrderTitle');
+                        if (title) title.innerText = `QR Ph ${paymentStatus}`;
+                        const subtitle = document.getElementById('successOrderSubtitle');
+                        if (subtitle) subtitle.innerText = 'This order has not been paid.';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('QR Ph payment status check failed:', error);
+                }
+            }
         }
 
         // --- Notification & SMS Dispatch Handlers for Customer / Concierge ---
@@ -321,11 +584,11 @@ window.lastOrderDetails = null;
             const itemsList = (order.items || []).map(it => `• ${it.qty}x ${it.name} (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}`).join('\n');
             let bankNote = '';
             if (order.paymentMethod && order.paymentMethod.includes('BPI')) {
-                bankNote = `\nBPI Account: ${currentPaymentSettings.bpiAccountNumber || '0019-2834-51'} (${currentPaymentSettings.bpiAccountName || 'Drift & Co. Fragrances'})\n`;
+                bankNote = `\nBPI Account: ${currentPaymentSettings.bpiAccountNumber} (${currentPaymentSettings.bpiAccountName})\n`;
             } else if (order.paymentMethod && order.paymentMethod.includes('BDO')) {
-                bankNote = `\nBDO Account: ${currentPaymentSettings.bdoAccountNumber || '0068-1234-5678'} (${currentPaymentSettings.bdoAccountName || 'Drift & Co. Fragrances'})\n`;
+                bankNote = `\nBDO Account: ${currentPaymentSettings.bdoAccountNumber} (${currentPaymentSettings.bdoAccountName})\n`;
             } else if (order.paymentMethod && order.paymentMethod.includes('GCash')) {
-                bankNote = `\nGCash: ${currentPaymentSettings.gcashNumber || '0917-123-4567'} (${currentPaymentSettings.gcashAccountName || 'Drift & Co. Store'})\n`;
+                bankNote = `\nGCash: ${currentPaymentSettings.gcashNumber} (${currentPaymentSettings.gcashAccountName})\n`;
             }
 
             return `DRIFT & CO. OFFICIAL ORDER RECEIPT\n` +

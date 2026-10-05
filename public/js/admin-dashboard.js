@@ -4,10 +4,43 @@
         // --- Orders & Inquiries Admin Dashboard ---
         let activeOrdersTab = 'orders';
 
+        function escapeAdminHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[char]);
+        }
+
+        function safeAdminPhone(value) {
+            return String(value || '').replace(/[^0-9+]/g, '');
+        }
+
+        function safeAdminImageUrl(value) {
+            try {
+                const url = new URL(String(value || ''), window.location.origin);
+                return url.protocol === 'https:' ? url.href : '';
+            } catch {
+                return '';
+            }
+        }
+
+        function bindPaymentCopyButtons(container) {
+            if (container.dataset.paymentCopyBound) return;
+            container.dataset.paymentCopyBound = 'true';
+            container.addEventListener('click', event => {
+                const button = event.target.closest('[data-copy-payment]');
+                if (!button || !container.contains(button)) return;
+                copyToClipboard(button.dataset.copyValue || '', button.dataset.copyMessage || 'Copied!');
+            });
+        }
+
         function studioApiHeaders(headers = {}) {
             const pin = typeof getStoredAdminPin === 'function'
                 ? getStoredAdminPin()
-                : (localStorage.getItem('drift_admin_pin') || '2010drift');
+                : '';
             return { ...headers, 'X-Studio-Pin': pin };
         }
 
@@ -45,20 +78,21 @@
 
         let currentPaymentSettings = {
             bdoEnabled: false,
-            bdoAccountName: 'Drift & Co. Fragrances',
-            bdoAccountNumber: '0068-1234-5678',
+            bdoAccountName: '',
+            bdoAccountNumber: '',
             bdoQrUrl: '',
             bpiEnabled: false,
-            bpiAccountName: 'Drift & Co. Fragrances',
-            bpiAccountNumber: '0019-2834-51',
+            bpiAccountName: '',
+            bpiAccountNumber: '',
             bpiQrUrl: '',
             gcashEnabled: false,
-            gcashAccountName: 'Drift & Co. Store',
-            gcashNumber: '0917-123-4567',
+            gcashAccountName: '',
+            gcashNumber: '',
             gcashQrUrl: '',
             instructions: 'Please transfer the exact amount and save a screenshot of your transfer receipt. You may paste your transaction reference number below or send proof of payment to our concierge.',
             gatewayProvider: 'manual',
             paymongoPublicKey: '',
+            qrphEnabled: false,
         };
 
         function switchOrdersTab(tab) {
@@ -99,24 +133,15 @@
 
         async function loadPaymentSettings() {
             try {
-                // Check local storage first
-                const savedLocal = localStorage.getItem('drift_payment_settings');
-                if (savedLocal) {
-                    try {
-                        const parsed = JSON.parse(savedLocal);
-                        currentPaymentSettings = { ...currentPaymentSettings, ...parsed };
-                    } catch (e) {}
+                const res = await fetch('/api/payments/settings');
+                const data = await res.json();
+                if (!res.ok || !data.success || !data.settings) {
+                    throw new Error(data.error || 'Unable to load payment settings.');
                 }
-
-                const res = await fetch('/api/payments/settings').catch(() => null);
-                if (res && res.ok) {
-                    const data = await res.json();
-                    if (data.success && data.settings) {
-                        currentPaymentSettings = { ...currentPaymentSettings, ...data.settings };
-                    }
-                }
+                currentPaymentSettings = { ...currentPaymentSettings, ...data.settings };
             } catch (err) {
                 console.warn('Error loading payment settings:', err);
+                if (typeof showToast === 'function') showToast(err.message || 'Unable to load payment settings.');
             } finally {
                 const s = currentPaymentSettings;
                 
@@ -142,6 +167,34 @@
             }
         }
 
+        async function loadStorePaymentSettings() {
+            try {
+                const res = await fetch('/api/payments/settings');
+                const data = await res.json();
+                if (!res.ok || !data.success || !data.settings) {
+                    throw new Error(data.error || 'Unable to load payment options.');
+                }
+                currentPaymentSettings = { ...currentPaymentSettings, ...data.settings };
+                const qrphStatus = document.getElementById('qrphGatewayStatus');
+                if (qrphStatus) {
+                    qrphStatus.innerText = currentPaymentSettings.qrphEnabled
+                        ? 'QR Ph is enabled and ready for checkout.'
+                        : 'QR Ph is not active yet. Configure all three PayMongo environment variables and redeploy.';
+                }
+                const select = document.getElementById('orderPaymentMethod');
+                if (select) {
+                    const selectedMethod = select.value;
+                    syncPaymentMethodDropdown();
+                    if ([...select.options].some(option => option.value === selectedMethod && !option.disabled)) {
+                        select.value = selectedMethod;
+                    }
+                    handlePaymentMethodChange();
+                }
+            } catch (error) {
+                console.error('Unable to load public payment settings:', error);
+            }
+        }
+
         function syncPaymentMethodDropdown() {
             const sel = document.getElementById('orderPaymentMethod');
             if (!sel) return;
@@ -150,6 +203,7 @@
             
             sel.innerHTML = `
                 <option value="Cash on Delivery (COD)" ${curVal === 'Cash on Delivery (COD)' ? 'selected' : ''}>Cash on Delivery (COD) — Available</option>
+                <option value="QR Ph" ${s.qrphEnabled ? '' : 'disabled class="text-stone-400"'} ${curVal === 'QR Ph' && s.qrphEnabled ? 'selected' : ''}>QR Ph ${s.qrphEnabled ? '(GCash, BPI, BDO & more)' : '(Currently Unavailable)'}</option>
                 <option value="GCash" ${s.gcashEnabled ? '' : 'disabled class="text-stone-400"'} ${curVal === 'GCash' && s.gcashEnabled ? 'selected' : ''}>GCash ${s.gcashEnabled ? '(Scan QR / Send Money)' : '(Currently Unavailable)'}</option>
                 <option value="BPI Bank Transfer" ${s.bpiEnabled ? '' : 'disabled class="text-stone-400"'} ${curVal === 'BPI Bank Transfer' && s.bpiEnabled ? 'selected' : ''}>BPI Bank Transfer ${s.bpiEnabled ? '(BPI Online / QR Ph)' : '(Currently Unavailable)'}</option>
                 <option value="BDO Bank Transfer" ${s.bdoEnabled ? '' : 'disabled class="text-stone-400"'} ${curVal === 'BDO Bank Transfer' && s.bdoEnabled ? 'selected' : ''}>BDO Bank Transfer ${s.bdoEnabled ? '(BDO Pay / QR Ph)' : '(Currently Unavailable)'}</option>
@@ -184,32 +238,21 @@
                 instructions: document.getElementById('cfgPaymentInstructions')?.value,
             };
 
-            // Save in localStorage immediately for resilient offline/Vercel persistence
-            try {
-                localStorage.setItem('drift_payment_settings', JSON.stringify(payload));
-            } catch (e) {}
-
-            currentPaymentSettings = { ...currentPaymentSettings, ...payload };
-            syncPaymentMethodDropdown();
-            handlePaymentMethodChange();
-
             try {
                 const res = await fetch('/api/payments/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: studioApiHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(payload)
-                }).catch(() => null);
-
-                if (res && res.ok) {
-                    const data = await res.json();
-                    if (data.success && data.settings) {
-                        currentPaymentSettings = { ...currentPaymentSettings, ...data.settings };
-                    }
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success || !data.settings) {
+                    throw new Error(data.error || 'Unable to save payment settings.');
                 }
-                showToast('✓ Bank & payment accounts saved permanently!');
+                currentPaymentSettings = { ...currentPaymentSettings, ...data.settings };
+                showToast('Bank and payment accounts saved.');
             } catch (err) {
                 console.error('Save payment settings error:', err);
-                showToast('✓ Saved locally on this browser.');
+                showToast(err.message || 'Unable to save payment settings.');
             } finally {
                 if (btn) btn.innerText = 'Save Bank & Payment Accounts';
                 syncPaymentMethodDropdown();
@@ -223,6 +266,15 @@
             if (!box) return;
             const s = currentPaymentSettings;
             const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            if (method === 'QR Ph') {
+                box.className = 'p-3 bg-[#FAF8F5] border border-[#E8E2D8] rounded-xs text-xs space-y-2';
+                box.innerHTML = `
+                    <p class="font-semibold text-stone-900">Secure dynamic QR Ph payment</p>
+                    <p class="text-stone-600">A unique QR code for this order and exact total will appear after you place the order. Scan it with a participating bank or e-wallet app, including GCash, BPI, or BDO Pay.</p>
+                `;
+                return;
+            }
 
             if (method.includes('BPI')) {
                 box.classList.remove('hidden');
@@ -238,21 +290,21 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-800">
                         <div>
                             <span class="text-[10px] text-stone-500 uppercase tracking-wider block">Account Name:</span>
-                            <span class="font-medium text-stone-900">${s.bpiAccountName || 'Drift & Co. Fragrances'}</span>
+                            <span class="font-medium text-stone-900">${escapeAdminHtml(s.bpiAccountName)}</span>
                         </div>
                         <div>
                             <span class="text-[10px] text-stone-500 uppercase tracking-wider block">Account Number:</span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="font-mono font-bold text-red-900 text-xs">${s.bpiAccountNumber || '0019-2834-51'}</span>
-                                <button type="button" onclick="copyToClipboard('${s.bpiAccountNumber || '0019-2834-51'}', 'BPI Account Number copied!')" class="px-2 py-0.5 bg-red-700 hover:bg-red-800 text-white rounded-xs text-[9px] uppercase font-semibold cursor-pointer">
+                                <span class="font-mono font-bold text-red-900 text-xs">${escapeAdminHtml(s.bpiAccountNumber)}</span>
+                                <button type="button" data-copy-payment data-copy-value="${escapeAdminHtml(s.bpiAccountNumber)}" data-copy-message="BPI Account Number copied!" class="px-2 py-0.5 bg-red-700 hover:bg-red-800 text-white rounded-xs text-[9px] uppercase font-semibold cursor-pointer">
                                     Copy
                                 </button>
                             </div>
                         </div>
                     </div>
-                    ${s.bpiQrUrl ? `
+                    ${safeAdminImageUrl(s.bpiQrUrl) ? `
                         <div class="pt-1 flex items-center gap-2">
-                            <img src="${s.bpiQrUrl}" alt="BPI QR" class="w-16 h-16 object-contain bg-white border border-red-200 rounded-xs">
+                            <img src="${escapeAdminHtml(safeAdminImageUrl(s.bpiQrUrl))}" alt="BPI QR" class="w-16 h-16 object-contain bg-white border border-red-200 rounded-xs">
                             <span class="text-[10px] text-stone-500">Scan via BPI Online / BPI Mobile App / any QR Ph bank</span>
                         </div>
                     ` : ''}
@@ -277,21 +329,21 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-800">
                         <div>
                             <span class="text-[10px] text-stone-500 uppercase tracking-wider block">Account Name:</span>
-                            <span class="font-medium text-stone-900">${s.bdoAccountName || 'Drift & Co. Fragrances'}</span>
+                            <span class="font-medium text-stone-900">${escapeAdminHtml(s.bdoAccountName)}</span>
                         </div>
                         <div>
                             <span class="text-[10px] text-stone-500 uppercase tracking-wider block">Account Number:</span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="font-mono font-bold text-blue-950 text-xs">${s.bdoAccountNumber || '0068-1234-5678'}</span>
-                                <button type="button" onclick="copyToClipboard('${s.bdoAccountNumber || '0068-1234-5678'}', 'BDO Account Number copied!')" class="px-2 py-0.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xs text-[9px] uppercase font-semibold cursor-pointer">
+                                <span class="font-mono font-bold text-blue-950 text-xs">${escapeAdminHtml(s.bdoAccountNumber)}</span>
+                                <button type="button" data-copy-payment data-copy-value="${escapeAdminHtml(s.bdoAccountNumber)}" data-copy-message="BDO Account Number copied!" class="px-2 py-0.5 bg-blue-900 hover:bg-blue-950 text-white rounded-xs text-[9px] uppercase font-semibold cursor-pointer">
                                     Copy
                                 </button>
                             </div>
                         </div>
                     </div>
-                    ${s.bdoQrUrl ? `
+                    ${safeAdminImageUrl(s.bdoQrUrl) ? `
                         <div class="pt-1 flex items-center gap-2">
-                            <img src="${s.bdoQrUrl}" alt="BDO QR" class="w-16 h-16 object-contain bg-white border border-blue-200 rounded-xs">
+                            <img src="${escapeAdminHtml(safeAdminImageUrl(s.bdoQrUrl))}" alt="BDO QR" class="w-16 h-16 object-contain bg-white border border-blue-200 rounded-xs">
                             <span class="text-[10px] text-stone-500">Scan via BDO Pay / BDO Online / InstaPay</span>
                         </div>
                     ` : ''}
@@ -316,21 +368,21 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-800">
                         <div>
                             <span class="text-[10px] text-stone-500 uppercase tracking-wider block">Account Name:</span>
-                            <span class="font-medium text-stone-900">${s.gcashAccountName || 'Drift & Co. Store'}</span>
+                            <span class="font-medium text-stone-900">${escapeAdminHtml(s.gcashAccountName)}</span>
                         </div>
                         <div>
                             <span class="text-[10px] text-stone-500 uppercase tracking-wider block">GCash Mobile:</span>
                             <div class="flex items-center gap-1.5 mt-0.5">
-                                <span class="font-mono font-bold text-blue-900 text-xs">${s.gcashNumber || '0917-123-4567'}</span>
-                                <button type="button" onclick="copyToClipboard('${s.gcashNumber || '0917-123-4567'}', 'GCash Number copied!')" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xs text-[9px] uppercase font-semibold cursor-pointer">
+                                <span class="font-mono font-bold text-blue-900 text-xs">${escapeAdminHtml(s.gcashNumber)}</span>
+                                <button type="button" data-copy-payment data-copy-value="${escapeAdminHtml(s.gcashNumber)}" data-copy-message="GCash Number copied!" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xs text-[9px] uppercase font-semibold cursor-pointer">
                                     Copy
                                 </button>
                             </div>
                         </div>
                     </div>
-                    ${s.gcashQrUrl ? `
+                    ${safeAdminImageUrl(s.gcashQrUrl) ? `
                         <div class="pt-1 flex items-center gap-2">
-                            <img src="${s.gcashQrUrl}" alt="GCash QR" class="w-16 h-16 object-contain bg-white border border-sky-200 rounded-xs">
+                            <img src="${escapeAdminHtml(safeAdminImageUrl(s.gcashQrUrl))}" alt="GCash QR" class="w-16 h-16 object-contain bg-white border border-sky-200 rounded-xs">
                             <span class="text-[10px] text-stone-500">Scan via GCash App</span>
                         </div>
                     ` : ''}
@@ -352,6 +404,7 @@
                     <p class="text-[11px] text-stone-600">Pay in cash when your bespoke perfume arrives at your door. No advance deposit required.</p>
                 `;
             }
+            bindPaymentCopyButtons(box);
         }
 
         function renderSuccessBankDetails(method, total) {
@@ -367,17 +420,17 @@
                         <span class="text-[10px] text-stone-600 font-semibold">Amount: ₱${Number(total).toFixed(2)}</span>
                     </div>
                     <div class="space-y-1 text-stone-700">
-                        <p><strong>Account Name:</strong> ${s.bpiAccountName || 'Drift & Co. Fragrances'}</p>
+                        <p><strong>Account Name:</strong> ${escapeAdminHtml(s.bpiAccountName)}</p>
                         <div class="flex items-center justify-between bg-stone-50 p-1.5 rounded-xs border border-stone-200">
                             <div>
                                 <span class="text-[9px] text-stone-400 block uppercase">BPI Account Number</span>
-                                <span class="font-mono font-bold text-stone-900">${s.bpiAccountNumber || '0019-2834-51'}</span>
+                                <span class="font-mono font-bold text-stone-900">${escapeAdminHtml(s.bpiAccountNumber)}</span>
                             </div>
-                            <button type="button" onclick="copyToClipboard('${s.bpiAccountNumber || '0019-2834-51'}', 'BPI Account Number copied!')" class="px-2 py-1 bg-red-700 hover:bg-red-800 text-white rounded-xs text-[10px] uppercase font-semibold cursor-pointer">
+                            <button type="button" data-copy-payment data-copy-value="${escapeAdminHtml(s.bpiAccountNumber)}" data-copy-message="BPI Account Number copied!" class="px-2 py-1 bg-red-700 hover:bg-red-800 text-white rounded-xs text-[10px] uppercase font-semibold cursor-pointer">
                                 Copy
                             </button>
                         </div>
-                        ${s.bpiQrUrl ? `<img src="${s.bpiQrUrl}" alt="BPI QR" class="w-28 h-28 object-contain mx-auto border border-stone-200 rounded-xs mt-1">` : ''}
+                        ${safeAdminImageUrl(s.bpiQrUrl) ? `<img src="${escapeAdminHtml(safeAdminImageUrl(s.bpiQrUrl))}" alt="BPI QR" class="w-28 h-28 object-contain mx-auto border border-stone-200 rounded-xs mt-1">` : ''}
                         <p class="text-[10px] text-stone-500 italic pt-1">Please keep a screenshot of your payment. Our concierge will verify your transfer before dispatch.</p>
                     </div>
                 `;
@@ -389,17 +442,17 @@
                         <span class="text-[10px] text-stone-600 font-semibold">Amount: ₱${Number(total).toFixed(2)}</span>
                     </div>
                     <div class="space-y-1 text-stone-700">
-                        <p><strong>Account Name:</strong> ${s.bdoAccountName || 'Drift & Co. Fragrances'}</p>
+                        <p><strong>Account Name:</strong> ${escapeAdminHtml(s.bdoAccountName)}</p>
                         <div class="flex items-center justify-between bg-stone-50 p-1.5 rounded-xs border border-stone-200">
                             <div>
                                 <span class="text-[9px] text-stone-400 block uppercase">BDO Account Number</span>
-                                <span class="font-mono font-bold text-stone-900">${s.bdoAccountNumber || '0068-1234-5678'}</span>
+                                <span class="font-mono font-bold text-stone-900">${escapeAdminHtml(s.bdoAccountNumber)}</span>
                             </div>
-                            <button type="button" onclick="copyToClipboard('${s.bdoAccountNumber || '0068-1234-5678'}', 'BDO Account Number copied!')" class="px-2 py-1 bg-blue-900 hover:bg-blue-950 text-white rounded-xs text-[10px] uppercase font-semibold cursor-pointer">
+                            <button type="button" data-copy-payment data-copy-value="${escapeAdminHtml(s.bdoAccountNumber)}" data-copy-message="BDO Account Number copied!" class="px-2 py-1 bg-blue-900 hover:bg-blue-950 text-white rounded-xs text-[10px] uppercase font-semibold cursor-pointer">
                                 Copy
                             </button>
                         </div>
-                        ${s.bdoQrUrl ? `<img src="${s.bdoQrUrl}" alt="BDO QR" class="w-28 h-28 object-contain mx-auto border border-stone-200 rounded-xs mt-1">` : ''}
+                        ${safeAdminImageUrl(s.bdoQrUrl) ? `<img src="${escapeAdminHtml(safeAdminImageUrl(s.bdoQrUrl))}" alt="BDO QR" class="w-28 h-28 object-contain mx-auto border border-stone-200 rounded-xs mt-1">` : ''}
                         <p class="text-[10px] text-stone-500 italic pt-1">Please keep a screenshot of your payment. Our concierge will verify your transfer before dispatch.</p>
                     </div>
                 `;
@@ -411,23 +464,24 @@
                         <span class="text-[10px] text-stone-600 font-semibold">Amount: ₱${Number(total).toFixed(2)}</span>
                     </div>
                     <div class="space-y-1 text-stone-700">
-                        <p><strong>Account Name:</strong> ${s.gcashAccountName || 'Drift & Co. Store'}</p>
+                        <p><strong>Account Name:</strong> ${escapeAdminHtml(s.gcashAccountName)}</p>
                         <div class="flex items-center justify-between bg-stone-50 p-1.5 rounded-xs border border-stone-200">
                             <div>
                                 <span class="text-[9px] text-stone-400 block uppercase">GCash Mobile Number</span>
-                                <span class="font-mono font-bold text-stone-900">${s.gcashNumber || '0917-123-4567'}</span>
+                                <span class="font-mono font-bold text-stone-900">${escapeAdminHtml(s.gcashNumber)}</span>
                             </div>
-                            <button type="button" onclick="copyToClipboard('${s.gcashNumber || '0917-123-4567'}', 'GCash Number copied!')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xs text-[10px] uppercase font-semibold cursor-pointer">
+                            <button type="button" data-copy-payment data-copy-value="${escapeAdminHtml(s.gcashNumber)}" data-copy-message="GCash Number copied!" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xs text-[10px] uppercase font-semibold cursor-pointer">
                                 Copy
                             </button>
                         </div>
-                        ${s.gcashQrUrl ? `<img src="${s.gcashQrUrl}" alt="GCash QR" class="w-28 h-28 object-contain mx-auto border border-stone-200 rounded-xs mt-1">` : ''}
+                        ${safeAdminImageUrl(s.gcashQrUrl) ? `<img src="${escapeAdminHtml(safeAdminImageUrl(s.gcashQrUrl))}" alt="GCash QR" class="w-28 h-28 object-contain mx-auto border border-stone-200 rounded-xs mt-1">` : ''}
                         <p class="text-[10px] text-stone-500 italic pt-1">Please send screenshot of your GCash receipt to our concierge.</p>
                     </div>
                 `;
             } else {
                 container.classList.add('hidden');
             }
+            bindPaymentCopyButtons(container);
         }
 
         async function loadNotificationSettings() {
@@ -454,27 +508,7 @@
                 }
             } catch (err) {
                 console.error('Error loading notification settings:', err);
-            } finally {
-                if (document.getElementById('cfgAdminPin')) {
-                    document.getElementById('cfgAdminPin').value = (typeof getStoredAdminPin === 'function' ? getStoredAdminPin() : (localStorage.getItem('drift_admin_pin') || '2010drift'));
-                }
             }
-        }
-
-        function updateOwnerPinFromSettings() {
-            const input = document.getElementById('cfgAdminPin');
-            if (!input) return;
-            const val = input.value.trim();
-            if (!val || val.length < 4) {
-                showToast('PIN must be at least 4 characters long.');
-                return;
-            }
-            if (typeof setStoredAdminPin === 'function') {
-                setStoredAdminPin(val);
-            } else {
-                localStorage.setItem('drift_admin_pin', val);
-            }
-            showToast('✓ Admin security PIN updated successfully!');
         }
 
         async function saveNotificationSettings(e) {
@@ -644,16 +678,24 @@
                         </div>
                     `;
 
-                    const cardsHtml = displayOrders.map(order => {
-                        const notifLogs = (order.notificationsSent || []).map(l => l.channel).join(', ') || 'SMS & App Dispatch';
+                    const cardsHtml = displayOrders.map((order, orderIndex) => {
+                        const notifLogs = (order.notificationsSent || []).map(log => log.channel).join(', ') || 'SMS & App Dispatch';
                         const isDelivered = order.status === 'Delivered';
+                        const totalLabel = order.shippingConfirmationRequired ? 'Items subtotal (provisional)' : 'Total';
+                        const shippingSummary = order.shippingConfirmationRequired
+                            ? `<p class="pt-1 text-amber-800"><strong>Shipping:</strong> Confirmation required${order.shippingConfirmationReasons?.length ? ` — ${escapeAdminHtml(order.shippingConfirmationReasons.join(' '))}` : ''}</p>`
+                            : order.shippingZone
+                                ? `<p class="pt-1"><strong>J&T delivery:</strong> ${order.deliveryFee === 0 ? 'Free' : `₱${Number(order.deliveryFee).toFixed(2)}`} • ${escapeAdminHtml(order.shippingZone)} • ${escapeAdminHtml(order.shippingWeightGrams || 0)} g • From ${escapeAdminHtml(order.shippingOrigin || 'office not recorded')}</p>`
+                                : Number.isFinite(Number(order.deliveryFee))
+                                    ? `<p class="pt-1"><strong>Delivery charge recorded:</strong> ₱${Number(order.deliveryFee).toFixed(2)}</p>`
+                                    : '';
                         return `
                         <div class="bg-white border ${isDelivered ? 'border-emerald-200 bg-emerald-50/20' : 'border-[#E8E2D8]'} p-4 rounded-xs shadow-xs space-y-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-2">
                                 <div>
-                                    <span class="font-mono text-xs font-bold text-[#C5A059]">${order.id}</span>
-                                    <span class="text-[11px] text-stone-400 ml-2">${new Date(order.createdAt).toLocaleString()}</span>
-                                    <span class="inline-block ml-2 px-2 py-0.5 bg-stone-100 text-stone-600 rounded-xs text-[10px]" title="Notification channels dispatched">🔔 ${notifLogs}</span>
+                                    <span class="font-mono text-xs font-bold text-[#C5A059]">${escapeAdminHtml(order.id)}</span>
+                                    <span class="text-[11px] text-stone-400 ml-2">${escapeAdminHtml(new Date(order.createdAt).toLocaleString())}</span>
+                                    <span class="inline-block ml-2 px-2 py-0.5 bg-stone-100 text-stone-600 rounded-xs text-[10px]" title="Notification channels dispatched">🔔 ${escapeAdminHtml(notifLogs)}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-xs ${
@@ -661,14 +703,14 @@
                                         order.status === 'Shipped' ? 'bg-amber-100 text-amber-800' :
                                         order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
                                         'bg-stone-100 text-stone-700'
-                                    }">${order.status}</span>
-                                    <select onchange="updateOrderStatus('${order.id}', this.value)" class="text-xs bg-stone-50 border border-stone-200 rounded-xs px-2 py-1 cursor-pointer font-medium">
+                                    }">${escapeAdminHtml(order.status)}</span>
+                                    <select data-order-action="status" data-order-index="${orderIndex}" class="text-xs bg-stone-50 border border-stone-200 rounded-xs px-2 py-1 cursor-pointer font-medium">
                                         <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                        <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                                        <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                                        <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered (Archive)</option>
+                                        <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''} ${order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid' ? 'disabled' : ''}>Confirmed</option>
+                                        <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''} ${order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid' ? 'disabled' : ''}>Shipped</option>
+                                        <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''} ${order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid' ? 'disabled' : ''}>Delivered (Archive)</option>
                                     </select>
-                                    <button onclick="openOrderTracker('${order.id}')" class="px-2 py-1 bg-stone-100 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" title="Preview public tracking page for this order">
+                                    <button type="button" data-order-action="track" data-order-index="${orderIndex}" class="px-2 py-1 bg-stone-100 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" title="Preview public tracking page for this order">
                                         <svg class="w-3 h-3 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                                         <span>Track</span>
                                     </button>
@@ -676,31 +718,33 @@
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                                 <div>
-                                    <p><strong class="text-stone-700">Customer:</strong> ${order.customerName}</p>
+                                    <p><strong class="text-stone-700">Customer:</strong> ${escapeAdminHtml(order.customerName)}</p>
                                     <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
                                         <strong class="text-stone-700">Phone:</strong>
-                                        <span class="font-mono text-stone-900">${order.phone}</span>
-                                        <button onclick="textCustomerDirect('${order.phone}', '${order.customerName.replace(/'/g, "\\'")}', '${order.id}', ${order.total})" class="px-2 py-0.5 bg-stone-100 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-semibold transition-colors cursor-pointer" title="Send SMS message to customer">📱 Text SMS</button>
-                                        <button onclick="whatsappCustomerDirect('${order.phone}', '${order.customerName.replace(/'/g, "\\'")}', '${order.id}', ${order.total})" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-xs text-[10px] font-semibold transition-colors cursor-pointer" title="Message customer on WhatsApp">💬 WhatsApp</button>
-                                        <a href="tel:${order.phone}" class="px-2 py-0.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xs text-[10px] font-semibold transition-colors">📞 Call</a>
+                                        <span class="font-mono text-stone-900">${escapeAdminHtml(order.phone)}</span>
+                                        <button type="button" data-order-action="sms" data-order-index="${orderIndex}" class="px-2 py-0.5 bg-stone-100 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-semibold transition-colors cursor-pointer" title="Send SMS message to customer">📱 Text SMS</button>
+                                        <button type="button" data-order-action="whatsapp" data-order-index="${orderIndex}" class="px-2 py-0.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-xs text-[10px] font-semibold transition-colors cursor-pointer" title="Message customer on WhatsApp">💬 WhatsApp</button>
+                                        <a href="tel:${escapeAdminHtml(safeAdminPhone(order.phone))}" class="px-2 py-0.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xs text-[10px] font-semibold transition-colors">📞 Call</a>
                                     </div>
-                                    <p class="pt-1"><strong class="text-stone-700">Payment:</strong> ${order.paymentMethod}</p>
+                                    <p class="pt-1"><strong class="text-stone-700">Payment:</strong> ${escapeAdminHtml(order.paymentMethod)}</p>
+                                    ${order.paymentStatus ? `<p class="pt-0.5"><strong class="text-stone-700">Payment status:</strong> <span class="font-semibold ${order.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-700'}">${escapeAdminHtml(order.paymentStatus)}</span></p>` : ''}
                                 </div>
                                 <div>
-                                    <p><strong class="text-stone-700">Address:</strong> ${order.address || 'Not provided'}</p>
-                                    ${order.notes ? `<p><strong class="text-stone-700">Notes:</strong> ${order.notes}</p>` : ''}
+                                    <p><strong class="text-stone-700">Address:</strong> ${escapeAdminHtml(order.address || 'Not provided')}</p>
+                                    ${shippingSummary}
+                                    ${order.notes ? `<p><strong class="text-stone-700">Notes:</strong> ${escapeAdminHtml(order.notes)}</p>` : ''}
                                     <div class="pt-1">
-                                        <button onclick="resendOrderAlert('${order.id}')" class="text-[10px] text-[#C5A059] hover:underline font-semibold cursor-pointer">🔄 Re-dispatch Alert to Owner</button>
+                                        <button type="button" data-order-action="resend" data-order-index="${orderIndex}" class="text-[10px] text-[#C5A059] hover:underline font-semibold cursor-pointer">🔄 Re-dispatch Alert to Owner</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="bg-stone-50 p-2.5 rounded-xs text-xs border border-stone-100">
                                 <div class="flex items-center justify-between font-semibold border-b border-stone-200 pb-1 mb-1">
                                     <span>Items (${order.items.length}):</span>
-                                    <span class="text-[#C5A059]">Total: ₱${order.total.toFixed(2)}</span>
+                                    <span class="text-[#C5A059]">${totalLabel}: ₱${Number(order.total).toFixed(2)}</span>
                                 </div>
                                 <ul class="space-y-0.5 text-stone-600">
-                                    ${order.items.map(it => `<li>${it.qty}x ${it.name} (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}</li>`).join('')}
+                                    ${(order.items || []).map(item => `<li>${escapeAdminHtml(item.qty)}x ${escapeAdminHtml(item.name)} (${escapeAdminHtml(item.volume || '50ml')}) — ₱${(Number(item.price) * Number(item.qty)).toFixed(2)}</li>`).join('')}
                                 </ul>
                             </div>
                         </div>
@@ -708,6 +752,21 @@
                     }).join('');
 
                     ordersContainer.innerHTML = headerToolbar + cardsHtml;
+                    ordersContainer.querySelectorAll('[data-order-action]').forEach(control => {
+                        const order = displayOrders[Number(control.dataset.orderIndex)];
+                        if (!order) return;
+
+                        if (control.dataset.orderAction === 'status') {
+                            control.addEventListener('change', event => updateOrderStatus(order.id, event.currentTarget.value));
+                        } else {
+                            control.addEventListener('click', () => {
+                                if (control.dataset.orderAction === 'track') openOrderTracker(order.id);
+                                if (control.dataset.orderAction === 'sms') textCustomerDirect(order.phone, order.customerName, order.id, order.total);
+                                if (control.dataset.orderAction === 'whatsapp') whatsappCustomerDirect(order.phone, order.customerName, order.id, order.total);
+                                if (control.dataset.orderAction === 'resend') resendOrderAlert(order.id);
+                            });
+                        }
+                    });
                 } else if (deliveredOrders.length > 0 && activeOrders.length === 0) {
                     ordersContainer.innerHTML = `
                         <div class="text-center py-12 text-stone-400 text-xs">
@@ -737,19 +796,19 @@
                     inqContainer.innerHTML = inqData.inquiries.map(inq => `
                         <div class="bg-white border border-[#E8E2D8] p-4 rounded-xs shadow-xs space-y-2 text-xs">
                             <div class="flex items-center justify-between border-b border-stone-100 pb-2">
-                                <span class="font-mono text-xs font-bold text-[#C5A059]">${inq.id}</span>
-                                <span class="text-[11px] text-stone-400">${new Date(inq.createdAt).toLocaleString()}</span>
+                                <span class="font-mono text-xs font-bold text-[#C5A059]">${escapeAdminHtml(inq.id)}</span>
+                                <span class="text-[11px] text-stone-400">${escapeAdminHtml(new Date(inq.createdAt).toLocaleString())}</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
-                                    <p><strong class="text-stone-700">Applicant:</strong> ${inq.name}</p>
-                                    <p><strong class="text-stone-700">Phone:</strong> <a href="tel:${inq.phone}" class="text-[#C5A059] hover:underline">${inq.phone}</a></p>
-                                    <p><strong class="text-stone-700">Email:</strong> ${inq.email || 'N/A'}</p>
+                                    <p><strong class="text-stone-700">Applicant:</strong> ${escapeAdminHtml(inq.name)}</p>
+                                    <p><strong class="text-stone-700">Phone:</strong> <a href="tel:${escapeAdminHtml(safeAdminPhone(inq.phone))}" class="text-[#C5A059] hover:underline">${escapeAdminHtml(inq.phone)}</a></p>
+                                    <p><strong class="text-stone-700">Email:</strong> ${escapeAdminHtml(inq.email || 'N/A')}</p>
                                 </div>
                                 <div>
-                                    <p><strong class="text-stone-700">Location:</strong> ${inq.location || 'N/A'}</p>
-                                    <p><strong class="text-stone-700">Package:</strong> ${inq.packageType}</p>
-                                    ${inq.message ? `<p><strong class="text-stone-700">Message:</strong> ${inq.message}</p>` : ''}
+                                    <p><strong class="text-stone-700">Location:</strong> ${escapeAdminHtml(inq.location || 'N/A')}</p>
+                                    <p><strong class="text-stone-700">Package:</strong> ${escapeAdminHtml(inq.packageType)}</p>
+                                    ${inq.message ? `<p><strong class="text-stone-700">Message:</strong> ${escapeAdminHtml(inq.message)}</p>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -811,6 +870,7 @@
         }
 
         let previousOrderCount = null;
+        let previousRevenue = null;
 
         async function loadStats() {
             try {
@@ -828,8 +888,16 @@
                         if (activeOrdersTab === 'orders' && document.getElementById('ordersDashboardModal')?.classList.contains('opacity-100')) {
                             loadDashboardData();
                         }
+                    } else if (
+                        previousRevenue !== null
+                        && data.stats.totalRevenue !== previousRevenue
+                        && activeOrdersTab === 'orders'
+                        && document.getElementById('ordersDashboardModal')?.classList.contains('opacity-100')
+                    ) {
+                        loadDashboardData();
                     }
                     previousOrderCount = currentOrders;
+                    previousRevenue = data.stats.totalRevenue;
                 }
             } catch (e) {
                 // Backend initializing or offline
@@ -859,6 +927,7 @@
 
 
 // Global Window Exports
+loadStorePaymentSettings();
 window.openOrdersDashboard = openOrdersDashboard;
 window.closeOrdersDashboard = closeOrdersDashboard;
 window.closeOrdersDashboardDirect = closeOrdersDashboardDirect;
@@ -878,5 +947,4 @@ window.loadDashboardData = loadDashboardData;
 window.toggleDeliveredOrdersView = toggleDeliveredOrdersView;
 window.updateOrderStatus = updateOrderStatus;
 window.loadStats = loadStats;
-window.updateOwnerPinFromSettings = updateOwnerPinFromSettings;
 window.showToast = showToast;

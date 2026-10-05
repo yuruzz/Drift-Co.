@@ -23,7 +23,12 @@ export default async function handler(req, res) {
       success: true,
       stats: {
         totalOrders: orders.length,
-        totalRevenue: orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0),
+        totalRevenue: orders.reduce((sum, order) => (
+          order.shippingConfirmationRequired
+            || order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid'
+            ? sum
+            : sum + (Number(order.total) || 0)
+        ), 0),
         totalInquiries: Object.keys(inquiriesById).length,
       },
     });

@@ -1,9 +1,18 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'node:crypto';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { normalizeNtfyTopic } from './lib/notifications.js';
+import { requireStudioAccess } from './lib/studio-auth.js';
+import { createQrPhPayment, getVerifiedQrPhPayment, paymongoQrPhReady, verifyPaymongoWebhook } from './lib/paymongo.js';
+import {
+  getDeliveryQuote,
+  searchDeliveryAddresses,
+  verifyDeliveryQuote,
+} from './lib/delivery.js';
+import { calculateOrderSubtotal } from './lib/order-pricing.js';
 
 dotenv.config();
 
@@ -33,8 +42,18 @@ interface Order {
   address: string;
   paymentMethod: string;
   paymentReference?: string;
+  paymentIntentId?: string;
+  paymentStatus?: 'Pending' | 'Paid' | 'Failed' | 'Expired';
   notes?: string;
   items: OrderItem[];
+  subtotal: number;
+  deliveryFee: number | null;
+  deliveryDistanceKm: number;
+  shippingWeightGrams?: number;
+  shippingZone?: string | null;
+  shippingOrigin?: string;
+  shippingConfirmationRequired?: boolean;
+  shippingConfirmationReasons?: string[];
   total: number;
   status: 'Pending' | 'Confirmed' | 'Shipped' | 'Delivered';
   createdAt: string;
@@ -98,6 +117,17 @@ interface PaymentSettings {
   paymongoPublicKey?: string;
 }
 
+function calculateQrPhTotal(items: OrderItem[]): number {
+  return items.reduce((sum, item) => {
+    const price = item.volume === '40ml' ? 380 : item.volume === '50ml' ? 450 : 0;
+    const quantity = Number(item.qty);
+    if (!price || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) {
+      throw Object.assign(new Error('The bag contains an invalid item or quantity.'), { statusCode: 400 });
+    }
+    return sum + price * quantity;
+  }, 0);
+}
+
 interface DatabaseSchema {
   orders: Order[];
   inquiries: PartnerInquiry[];
@@ -113,7 +143,7 @@ async function startServer() {
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Studio-Pin');
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
       return;
@@ -121,7 +151,49 @@ async function startServer() {
     next();
   });
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({
+    limit: '10mb',
+    verify: (req, _res, buffer) => {
+      (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+    },
+  }));
+
+  app.post('/api/studio/auth', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
+    res.json({ success: true });
+  });
+
+  app.get('/api/delivery/search', async (req: Request, res: Response) => {
+    try {
+      const addresses = await searchDeliveryAddresses(String(req.query.q || ''));
+      res.json({ success: true, addresses });
+    } catch (error) {
+      console.error('Delivery address search error:', error);
+      const statusCode = typeof error === 'object' && error && 'statusCode' in error
+        ? Number(error.statusCode) || 500
+        : 500;
+      const message = error instanceof Error ? error.message : 'Unable to search addresses right now.';
+      res.status(statusCode).json({ success: false, error: message });
+    }
+  });
+
+  app.post('/api/delivery-quote', async (req: Request, res: Response) => {
+    try {
+      const quote = await getDeliveryQuote(
+        req.body.latitude,
+        req.body.longitude,
+        req.body.items,
+      );
+      res.json({ success: true, ...quote });
+    } catch (error) {
+      console.error('Delivery quote error:', error);
+      const statusCode = typeof error === 'object' && error && 'statusCode' in error
+        ? Number(error.statusCode) || 500
+        : 500;
+      const message = error instanceof Error ? error.message : 'Unable to calculate the delivery charge.';
+      res.status(statusCode).json({ success: false, error: message });
+    }
+  });
 
   const DATA_DIR = path.resolve(process.cwd(), 'data');
   const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -151,16 +223,16 @@ async function startServer() {
 
   const defaultPaymentSettings: PaymentSettings = {
     bdoEnabled: false,
-    bdoAccountName: 'Drift & Co. Fragrances',
-    bdoAccountNumber: '0068-1234-5678',
+    bdoAccountName: '',
+    bdoAccountNumber: '',
     bdoQrUrl: '',
     bpiEnabled: false,
-    bpiAccountName: 'Drift & Co. Fragrances',
-    bpiAccountNumber: '0019-2834-51',
+    bpiAccountName: '',
+    bpiAccountNumber: '',
     bpiQrUrl: '',
     gcashEnabled: false,
-    gcashAccountName: 'Drift & Co. Store',
-    gcashNumber: '0917-123-4567',
+    gcashAccountName: '',
+    gcashNumber: '',
     gcashQrUrl: '',
     instructions: 'Please transfer the exact amount and save a screenshot of your transfer receipt. You may paste your transaction reference number below or send proof of payment to our concierge.',
     gatewayProvider: 'manual',
@@ -192,6 +264,58 @@ async function startServer() {
     } catch (e) {
       console.error('Failed writing DB file', e);
     }
+
+    app.post('/api/payments/paymongo/webhook', async (req: Request & { rawBody?: Buffer }, res: Response) => {
+      if (!req.rawBody || !verifyPaymongoWebhook(req.rawBody, req.header('paymongo-signature'))) {
+        res.status(401).json({ success: false, error: 'Invalid webhook signature.' });
+        return;
+      }
+
+      try {
+        const eventAttributes = req.body?.data?.attributes || {};
+        const payment = eventAttributes.data || {};
+        const paymentAttributes = payment.attributes || {};
+        const paymentIntentId = paymentAttributes.payment_intent_id
+          || (typeof payment.id === 'string' && payment.id.startsWith('pi_') ? payment.id : '');
+        if (!paymentIntentId) {
+          res.json({ success: true, ignored: true });
+          return;
+        }
+
+        const verifiedPayment = await getVerifiedQrPhPayment(paymentIntentId);
+        const db = getDB();
+        const order = db.orders.find(candidate => candidate.id === verifiedPayment.orderId);
+        if (!order || order.paymentIntentId !== verifiedPayment.paymentIntentId) {
+          res.json({ success: true, ignored: true });
+          return;
+        }
+        if (
+          verifiedPayment.amount !== Math.round(order.total * 100)
+          || verifiedPayment.currency !== 'PHP'
+        ) {
+          console.error(`PayMongo amount or currency mismatch for order ${order.id}.`);
+          res.status(400).json({ success: false, error: 'Payment details do not match the order.' });
+          return;
+        }
+
+        if (verifiedPayment.status === 'succeeded') {
+          order.paymentStatus = 'Paid';
+          if (order.status === 'Pending') order.status = 'Confirmed';
+        } else if (eventAttributes.type === 'qrph.expired') {
+          order.paymentStatus = 'Expired';
+        } else if (eventAttributes.type === 'payment.failed') {
+          order.paymentStatus = 'Failed';
+        } else {
+          res.json({ success: true, ignored: true });
+          return;
+        }
+        saveDB(db);
+        res.json({ success: true });
+      } catch (error) {
+        console.error('PayMongo webhook error:', error);
+        res.status(500).json({ success: false, error: 'Unable to process the payment notification.' });
+      }
+    });
   }
 
   // Helper: Dispatch Order Notifications (Telegram, Discord/Webhooks, Semaphore PH SMS, Twilio)
@@ -200,6 +324,9 @@ async function startServer() {
     const logs: NotificationLog[] = [];
 
     const itemsText = order.items.map(it => `• ${it.qty}x ${it.name} (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}`).join('\n');
+    const amountSummary = order.shippingConfirmationRequired
+      ? `Items subtotal: ₱${order.subtotal.toFixed(2)}; shipping to be confirmed`
+      : `Total amount: ₱${order.total.toFixed(2)}`;
     
     // Detailed message for store owner / concierge
     const ownerSummary = `🛍️ *DRIFT & CO. — NEW CUSTOMER ORDER!*\n\n` +
@@ -209,13 +336,17 @@ async function startServer() {
       `*Address:* ${order.address || 'N/A'}\n` +
       `*Payment:* ${order.paymentMethod}${order.paymentReference ? ` (Ref: \`${order.paymentReference}\`)` : ''}\n` +
       (order.notes ? `*Notes:* ${order.notes}\n` : '') +
-      `\n*Bottles Ordered:*\n${itemsText}\n\n` +
-      `*Total Amount:* ₱${order.total.toFixed(2)}\n` +
+      `\n*Items Ordered:*\n${itemsText}\n\n` +
+      `*${amountSummary}*\n` +
+      (order.shippingConfirmationRequired ? `*Shipping:* ${order.shippingConfirmationReasons?.join(' ')}\n` : '') +
+      `*Dispatch office:* ${order.shippingOrigin || 'To be assigned'}\n` +
       `*Status:* ${order.status}\n` +
       `*Time:* ${new Date(order.createdAt).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}`;
 
     // Concise, friendly SMS/text for customer
-    const customerSms = `Drift & Co.: Hello ${order.customerName}! Your order #${order.id} for ₱${order.total.toFixed(2)} (${order.paymentMethod}) has been received! Our concierge will contact you shortly regarding delivery to: ${order.address}.`;
+    const customerSms = order.shippingConfirmationRequired
+      ? `Drift & Co.: Hello ${order.customerName}! Your order #${order.id} has been received. Items subtotal: ₱${order.subtotal.toFixed(2)}; shipping is to be confirmed by our concierge before dispatch. Delivery to: ${order.address}.`
+      : `Drift & Co.: Hello ${order.customerName}! Your order #${order.id} for ₱${order.total.toFixed(2)} (${order.paymentMethod}) has been received! Our concierge will contact you shortly regarding delivery to: ${order.address}.`;
 
     // 1. Telegram Bot (Free, Instant Push Notification with Audio)
     if (settings.telegramBotToken && settings.telegramChatId && settings.notifyOwnerOnOrder) {
@@ -247,7 +378,7 @@ async function startServer() {
         let bodyPayload: any;
         if (isDiscord) {
           bodyPayload = {
-            content: `🚨 **New Drift & Co. Perfume Order!**\n**Order #:** \`${order.id}\`\n**Customer:** **${order.customerName}** (📞 \`${order.phone}\`)\n**Total:** **₱${order.total.toFixed(2)}** via *${order.paymentMethod}*\n**Address:** ${order.address}\n**Items Ordered:**\n${order.items.map(it => `> • **${it.qty}x ${it.name}** (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}`).join('\n')}`
+            content: `🚨 **New Drift & Co. Perfume Order!**\n**Order #:** \`${order.id}\`\n**Customer:** **${order.customerName}** (📞 \`${order.phone}\`)\n**${amountSummary}** via *${order.paymentMethod}*\n${order.shippingConfirmationRequired ? `**Shipping:** ${order.shippingConfirmationReasons?.join(' ')}\n` : ''}**Dispatch office:** ${order.shippingOrigin || 'To be assigned'}\n**Address:** ${order.address}\n**Items Ordered:**\n${order.items.map(it => `> • **${it.qty}x ${it.name}** (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}`).join('\n')}`
           };
         } else {
           bodyPayload = { event: 'order.created', order, textSummary: ownerSummary, customerSms };
@@ -272,7 +403,7 @@ async function startServer() {
     if (settings.semaphoreApiKey) {
       if (settings.notifyOwnerOnOrder && settings.ownerPhone) {
         try {
-          const ownerMsg = `[Drift & Co. New Order] #${order.id} from ${order.customerName} (${order.phone}), Total: P${order.total.toFixed(2)} (${order.paymentMethod}). Address: ${order.address}`;
+          const ownerMsg = `[Drift & Co. New Order] #${order.id} from ${order.customerName} (${order.phone}), ${amountSummary} (${order.paymentMethod}). Address: ${order.address}`;
           const params = new URLSearchParams();
           params.append('apikey', settings.semaphoreApiKey);
           params.append('number', settings.ownerPhone);
@@ -325,7 +456,7 @@ async function startServer() {
       };
 
       if (settings.notifyOwnerOnOrder && settings.ownerPhone) {
-        await sendTwilio(settings.ownerPhone, `[Drift & Co.] New Order #${order.id} from ${order.customerName}: P${order.total.toFixed(2)}`, 'Owner');
+        await sendTwilio(settings.ownerPhone, `[Drift & Co.] New Order #${order.id} from ${order.customerName}: ${amountSummary}`, 'Owner');
       }
       if (settings.notifyCustomerOnOrder && order.phone) {
         await sendTwilio(order.phone, customerSms, 'Customer');
@@ -339,11 +470,11 @@ async function startServer() {
         const ntfyRes = await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
           method: 'POST',
           headers: {
-            'Title': `New Drift & Co. Order: ${order.customerName} (PHP ${order.total.toFixed(2)})`,
+            'Title': 'New Drift & Co. Order',
             'Priority': 'urgent',
             'Tags': 'shopping_bags,perfume,moneybag',
           },
-          body: `Order Reference: ${order.id}\nCustomer: ${order.customerName} (Phone: ${order.phone})\nTotal: ₱${order.total.toFixed(2)} (${order.paymentMethod})\nDelivery Address: ${order.address || 'N/A'}\n\nBottles:\n${itemsText}\n\nNotes: ${order.notes || 'None'}`
+          body: 'A new order was received. Open the authenticated Studio dashboard to review it.',
         });
         if (ntfyRes.ok) {
           logs.push({ channel: `Instant Phone Alert (ntfy.sh/${topic})`, recipient: `Topic: ${topic}`, status: 'Sent', timestamp: new Date().toISOString() });
@@ -385,11 +516,11 @@ async function startServer() {
         await fetch(`https://ntfy.sh/${encodeURIComponent(topic)}`, {
           method: 'POST',
           headers: {
-            'Title': `New Drift & Co. Reseller Inquiry: ${inquiry.name}`,
+            'Title': 'New Drift & Co. Reseller Inquiry',
             'Priority': 'high',
             'Tags': 'briefcase,handshake',
           },
-          body: `Applicant: ${inquiry.name} (Phone: ${inquiry.phone})\nEmail: ${inquiry.email || 'N/A'}\nLocation: ${inquiry.location || 'N/A'}\nPackage: ${inquiry.packageType}\nMessage: ${inquiry.message || 'None'}`
+          body: 'A new reseller inquiry was received. Open the authenticated Studio dashboard to review it.'
         });
         logs.push({ channel: `Instant Phone Alert (ntfy.sh/${topic})`, recipient: `Topic: ${topic}`, status: 'Sent', timestamp: new Date().toISOString() });
       } catch (e: any) {
@@ -454,7 +585,12 @@ async function startServer() {
   app.get('/api/stats', (_req: Request, res: Response) => {
     const db = getDB();
     const totalOrders = db.orders.length;
-    const totalRevenue = db.orders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const totalRevenue = db.orders.reduce((sum, order) => (
+      order.shippingConfirmationRequired
+        || order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid'
+        ? sum
+        : sum + (order.total || 0)
+    ), 0);
     const totalInquiries = db.inquiries.length;
     res.json({
       success: true,
@@ -467,89 +603,118 @@ async function startServer() {
   });
 
   // Orders: List all
-  app.get('/api/orders', (_req: Request, res: Response) => {
+  app.get('/api/orders', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     res.json({ success: true, orders: db.orders });
   });
 
   // Orders: Create new order
   app.post('/api/orders', async (req: Request, res: Response) => {
-    const { customerName, phone, address, paymentMethod, paymentReference, notes, items, total } = req.body;
+    try {
+      const {
+        customerName,
+        phone,
+        addressDetails,
+        deliveryQuoteToken,
+        paymentMethod,
+        paymentReference,
+        notes,
+        items,
+      } = req.body;
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      res.status(400).json({ success: false, error: 'Bag is empty or invalid items provided.' });
-      return;
-    }
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        res.status(400).json({ success: false, error: 'Bag is empty or invalid items provided.' });
+        return;
+      }
 
-    if (!customerName || !phone) {
-      res.status(400).json({ success: false, error: 'Customer name and phone number are required.' });
-      return;
-    }
+      if (!customerName || !phone) {
+        res.status(400).json({ success: false, error: 'Customer name and phone number are required.' });
+        return;
+      }
 
-    const orderId = 'DRFT-' + Math.floor(100000 + Math.random() * 900000);
-    const calculatedTotal = Number(total) || items.reduce((acc: number, item: OrderItem) => acc + (item.price * item.qty), 0);
+      const orderId = `DRFT-${randomUUID().toUpperCase()}`;
+      const isQrPhPayment = paymentMethod === 'QR Ph';
+      const subtotal = isQrPhPayment ? calculateQrPhTotal(items) : calculateOrderSubtotal(items);
+      const delivery = verifyDeliveryQuote(deliveryQuoteToken, items);
+      if (isQrPhPayment && delivery.shippingConfirmationRequired) {
+        throw Object.assign(new Error('QR Ph is unavailable until shipping charges are confirmed. Please choose Cash on Delivery or contact the store.'), { statusCode: 400 });
+      }
+      const cleanAddressDetails = String(addressDetails || '').trim().slice(0, 200);
+      const calculatedTotal = subtotal + (delivery.deliveryFee || 0);
 
-    const newOrder: Order = {
-      id: orderId,
-      customerName: String(customerName).trim(),
-      phone: String(phone).trim(),
-      address: String(address || '').trim(),
-      paymentMethod: String(paymentMethod || 'Cash on Delivery (COD)').trim(),
-      paymentReference: paymentReference ? String(paymentReference).trim() : undefined,
-      notes: notes ? String(notes).trim() : undefined,
-      items,
-      total: calculatedTotal,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-      notificationsSent: [],
-    };
+      const newOrder: Order = {
+        id: orderId,
+        customerName: String(customerName).trim(),
+        phone: String(phone).trim(),
+        address: [delivery.address, cleanAddressDetails].filter(Boolean).join(', '),
+        paymentMethod: String(paymentMethod || 'Cash on Delivery (COD)').trim(),
+        paymentReference: paymentReference ? String(paymentReference).trim() : undefined,
+        notes: notes ? String(notes).trim() : undefined,
+        items,
+        subtotal,
+        deliveryFee: delivery.deliveryFee,
+        deliveryDistanceKm: delivery.distanceKm,
+        shippingWeightGrams: delivery.shippingWeightGrams,
+        shippingZone: delivery.zone,
+        shippingOrigin: delivery.origin,
+        shippingConfirmationRequired: delivery.shippingConfirmationRequired,
+        shippingConfirmationReasons: delivery.shippingConfirmationReasons,
+        total: calculatedTotal,
+        status: 'Pending',
+        ...(isQrPhPayment ? { paymentStatus: 'Pending' as const } : {}),
+        createdAt: new Date().toISOString(),
+        notificationsSent: [],
+      };
 
-    const db = getDB();
-    db.orders.unshift(newOrder);
-    saveDB(db);
-
-    // Return instant success response to client immediately (no timeout/network lag)
-    res.status(201).json({
-      success: true,
-      message: 'Order placed successfully! Notifications dispatched.',
-      order: newOrder,
-    });
-
-    // Asynchronously dispatch external notifications in background
-    dispatchOrderNotifications(newOrder, db).then(logs => {
-      newOrder.notificationsSent = logs;
+      const db = getDB();
+      const payment = isQrPhPayment ? await createQrPhPayment(calculatedTotal, orderId) : null;
+      if (payment) newOrder.paymentIntentId = payment.paymentIntentId;
+      db.orders.unshift(newOrder);
       saveDB(db);
-    }).catch(notifErr => {
-      console.error('Background notification dispatch error:', notifErr);
-    });
+
+      res.status(201).json({
+        success: true,
+        message: 'Order placed successfully! Notifications dispatched.',
+        order: newOrder,
+        ...(payment ? { payment: { qrCodeDataUrl: payment.qrCodeDataUrl } } : {}),
+      });
+
+      dispatchOrderNotifications(newOrder, db).then(logs => {
+        newOrder.notificationsSent = logs;
+        saveDB(db);
+      }).catch(notifErr => {
+        console.error('Background notification dispatch error:', notifErr);
+      });
+    } catch (error) {
+      console.error('Order creation error:', error);
+      const statusCode = typeof error === 'object' && error && 'statusCode' in error
+        ? Number(error.statusCode) || 500
+        : 500;
+      const message = error instanceof Error ? error.message : 'Unable to create order.';
+      res.status(statusCode).json({ success: false, error: message });
+    }
   });
 
-  // Orders: Track order by ID or phone number
+  // Orders: Track order by full reference ID
   app.get('/api/orders/track/:query', (req: Request, res: Response) => {
     const rawQuery = String(req.params.query || '').trim();
     if (!rawQuery) {
-      res.status(400).json({ success: false, error: 'Please provide an Order Reference ID or Phone Number.' });
+      res.status(400).json({ success: false, error: 'Please provide the full Order Reference ID.' });
       return;
     }
 
     const cleanQuery = rawQuery.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     const db = getDB();
-
-    // Match order ID (e.g. "DRFT-444818", "444818", "drft444818") or phone number
     const order = db.orders.find(o => {
       const oIdClean = o.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const oPhoneClean = (o.phone || '').replace(/[^0-9]/g, '');
-      const queryDigits = cleanQuery.replace(/\D/g, '');
-
-      if (oIdClean === cleanQuery || oIdClean.endsWith(cleanQuery) || cleanQuery.endsWith(oIdClean)) return true;
-      if (queryDigits.length >= 7 && (oPhoneClean.endsWith(queryDigits) || queryDigits.endsWith(oPhoneClean))) return true;
-      return false;
+      return oIdClean === cleanQuery;
     });
 
     if (!order) {
       res.status(404).json({
         success: false,
-        error: `No order found matching "${rawQuery}". Please check your Order ID from your confirmation receipt or SMS.`,
+        error: 'No order found with that full reference ID.',
       });
       return;
     }
@@ -607,16 +772,28 @@ async function startServer() {
         description: currentStep === 4 ? 'Package successfully received by customer.' : 'Courier will notify via SMS or call prior to arrival.',
         status: currentStep === 4 ? 'completed' : currentStep === 3 ? 'in_progress' : 'upcoming',
         timestamp: currentStep === 4 ? formatDate(step4Date) : estDeliveryStr,
-        location: order.address || 'Customer Delivery Address',
+        location: 'Delivery destination',
       },
     ];
 
     const digitsOnly = order.id.replace(/\D/g, '') || '882194';
     const trackingNumber = `PH-JT-${digitsOnly}EXP`;
+    const trackingOrder = {
+      id: order.id,
+      status: order.status,
+      createdAt: order.createdAt,
+      total: order.total,
+      shippingConfirmationRequired: Boolean(order.shippingConfirmationRequired),
+      shippingConfirmationReasons: order.shippingConfirmationReasons || [],
+      deliveryFee: order.deliveryFee,
+      shippingZone: order.shippingZone,
+      shippingOrigin: order.shippingOrigin,
+      ...(order.paymentStatus ? { paymentStatus: order.paymentStatus } : {}),
+    };
 
     res.json({
       success: true,
-      order,
+      order: trackingOrder,
       tracking: {
         trackingNumber,
         courier: 'J&T Express PH / Drift Priority Courier',
@@ -630,6 +807,7 @@ async function startServer() {
 
   // Orders: Update order status
   app.patch('/api/orders/:id/status', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const { id } = req.params;
     const { status } = req.body;
     const validStatuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
@@ -645,6 +823,10 @@ async function startServer() {
       res.status(404).json({ success: false, error: 'Order not found.' });
       return;
     }
+    if (order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid' && status !== 'Pending') {
+      res.status(409).json({ success: false, error: 'QR Ph orders can only be fulfilled after payment is verified.' });
+      return;
+    }
 
     order.status = status as Order['status'];
     saveDB(db);
@@ -654,6 +836,7 @@ async function startServer() {
 
   // Orders: Manual Re-send / Send Custom SMS Alert
   app.post('/api/orders/:id/notify', async (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const { id } = req.params;
     const { customMessage } = req.body;
     const db = getDB();
@@ -675,7 +858,8 @@ async function startServer() {
   });
 
   // Business Partner Inquiries: List
-  app.get('/api/partner-inquiries', (_req: Request, res: Response) => {
+  app.get('/api/partner-inquiries', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     res.json({ success: true, inquiries: db.inquiries });
   });
@@ -723,7 +907,8 @@ async function startServer() {
   });
 
   // Notification Settings: Get
-  app.get('/api/notifications/settings', (_req: Request, res: Response) => {
+  app.get('/api/notifications/settings', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     const settings = { ...(db.notificationSettings || defaultSettings) };
     
@@ -739,6 +924,7 @@ async function startServer() {
 
   // Notification Settings: Save
   app.post('/api/notifications/settings', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     const current = db.notificationSettings || defaultSettings;
     const body = req.body || {};
@@ -771,6 +957,7 @@ async function startServer() {
 
   // Notification: Send Test Alert
   app.post('/api/notifications/test', async (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     const dummyOrder: Order = {
       id: 'TEST-' + Math.floor(1000 + Math.random() * 9000),
@@ -788,6 +975,9 @@ async function startServer() {
           qty: 1,
         }
       ],
+      subtotal: 450,
+      deliveryFee: 0,
+      deliveryDistanceKm: 0,
       total: 450,
       status: 'Pending',
       createdAt: new Date().toISOString(),
@@ -811,6 +1001,7 @@ async function startServer() {
   });
 
   app.post('/api/site-images', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     if (!db.siteImages) {
       db.siteImages = { products: {} };
@@ -866,6 +1057,7 @@ async function startServer() {
   });
 
   app.post('/api/site-images/reset', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     const { target } = req.body || {};
     if (!db.siteImages) {
@@ -904,11 +1096,12 @@ async function startServer() {
     const db = getDB();
     res.json({
       success: true,
-      settings: db.paymentSettings || defaultPaymentSettings,
+      settings: { ...(db.paymentSettings || defaultPaymentSettings), qrphEnabled: paymongoQrPhReady() },
     });
   });
 
   app.post('/api/payments/settings', (req: Request, res: Response) => {
+    if (!requireStudioAccess(req, res)) return;
     const db = getDB();
     const current = db.paymentSettings || defaultPaymentSettings;
     const body = req.body || {};
@@ -933,6 +1126,20 @@ async function startServer() {
       gatewayProvider: body.gatewayProvider || current.gatewayProvider || 'manual',
       paymongoPublicKey: body.paymongoPublicKey !== undefined ? String(body.paymongoPublicKey).trim() : (current.paymongoPublicKey || ''),
     };
+
+    const missingDestination = updated.bdoEnabled && (!updated.bdoAccountName || !updated.bdoAccountNumber)
+      ? 'BDO'
+      : updated.bpiEnabled && (!updated.bpiAccountName || !updated.bpiAccountNumber)
+        ? 'BPI'
+        : updated.gcashEnabled && (!updated.gcashAccountName || !updated.gcashNumber)
+          ? 'GCash'
+          : '';
+    if (missingDestination) {
+      return res.status(400).json({
+        success: false,
+        error: `Set the account name and destination for ${missingDestination} before enabling it.`,
+      });
+    }
 
     db.paymentSettings = updated;
     saveDB(db);

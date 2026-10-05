@@ -95,6 +95,11 @@
         }
 
         // Real-Time Server Persistence Sync
+        function photoManagerApiHeaders(headers = {}) {
+            const pin = typeof getStoredAdminPin === 'function' ? getStoredAdminPin() : '';
+            return { ...headers, 'X-Studio-Pin': pin };
+        }
+
         async function syncSiteImagesWithServer() {
             try {
                 const res = await fetch('/api/site-images');
@@ -129,10 +134,10 @@
                         (localData.partner && !serverData.partner) ||
                         (localData.products && Object.keys(localData.products).some(k => !serverData.products || !serverData.products[k]));
 
-                    if (needsServerPush) {
+                    if (needsServerPush && checkAdminAccess()) {
                         fetch('/api/site-images', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: photoManagerApiHeaders({ 'Content-Type': 'application/json' }),
                             body: JSON.stringify({ siteImages: localData })
                         }).catch(() => {});
                     }
@@ -152,18 +157,24 @@
 
         // Publishing & Admin Access Mode Helpers
         const ADMIN_ACCESS_KEY = 'drift_admin_access_granted';
-        const ADMIN_PIN_KEY = 'drift_admin_pin';
+        const ADMIN_PIN_KEY = 'drift_studio_pin';
         let pendingAdminAction = null;
+        try {
+            localStorage.removeItem('drift_admin_pin');
+            localStorage.removeItem(ADMIN_ACCESS_KEY);
+        } catch (error) {
+            console.warn('Unable to clear legacy Studio credentials from local storage:', error);
+        }
 
         function getStoredAdminPin() {
-            return localStorage.getItem(ADMIN_PIN_KEY) || '2010drift';
+            return sessionStorage.getItem(ADMIN_PIN_KEY) || '';
         }
 
         function setStoredAdminPin(newPin) {
             if (!newPin || String(newPin).trim().length < 4) {
                 return false;
             }
-            localStorage.setItem(ADMIN_PIN_KEY, String(newPin).trim());
+            sessionStorage.setItem(ADMIN_PIN_KEY, String(newPin));
             return true;
         }
 
@@ -218,22 +229,33 @@
             }
         }
 
-        function verifyAdminPasscode(e) {
+        async function verifyAdminPasscode(e) {
             if (e) e.preventDefault();
             const input = document.getElementById('adminPasscodeInput');
             const error = document.getElementById('adminAuthError');
-            const entered = (input?.value || '').trim();
+            const button = document.getElementById('btnSubmitAdminAuth');
+            const entered = input?.value || '';
+            if (!entered) return;
 
-            const currentPin = getStoredAdminPin();
-            // Accept configured PIN, 2010drift, or fallback PINs
-            if (entered === currentPin || entered === '2010drift' || entered === '2010' || entered === 'drift2010') {
-                localStorage.setItem(ADMIN_ACCESS_KEY, 'true');
+            if (button) button.disabled = true;
+            try {
+                const response = await fetch('/api/studio/auth', {
+                    method: 'POST',
+                    headers: { 'X-Studio-Pin': entered },
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Incorrect passcode. Access denied.');
+                }
+
+                setStoredAdminPin(entered);
+                sessionStorage.setItem(ADMIN_ACCESS_KEY, 'true');
                 if (error) error.classList.add('hidden');
                 closeAdminAuthModalDirect();
                 setPublishMode(false);
                 updatePublishModeUI();
                 if (typeof showToast === 'function') {
-                    showToast('✨ Store Owner Verified — Admin Studio Unlocked');
+                    showToast('Store owner verified. Studio access is active for this tab.');
                 }
 
                 if (typeof pendingAdminAction === 'function') {
@@ -241,10 +263,10 @@
                     pendingAdminAction = null;
                     action();
                 }
-            } else {
+            } catch (err) {
                 if (error) {
                     error.classList.remove('hidden');
-                    error.innerText = 'Incorrect passcode. Access denied.';
+                    error.innerText = err.message || 'Unable to verify the Studio PIN.';
                 }
                 if (input) {
                     input.classList.add('border-red-500');
@@ -252,11 +274,14 @@
                     input.focus();
                     input.select();
                 }
+            } finally {
+                if (button) button.disabled = false;
             }
         }
 
         function lockAdminMode() {
-            localStorage.removeItem(ADMIN_ACCESS_KEY);
+            sessionStorage.removeItem(ADMIN_ACCESS_KEY);
+            sessionStorage.removeItem(ADMIN_PIN_KEY);
             setPublishMode(true);
             updatePublishModeUI();
 
@@ -271,21 +296,28 @@
 
         function checkAdminAccess() {
             const urlParams = new URLSearchParams(window.location.search);
-            // Secret direct key URL parameter
-            if (urlParams.get('key') === 'drift2010' || urlParams.get('key') === getStoredAdminPin()) {
-                localStorage.setItem(ADMIN_ACCESS_KEY, 'true');
-                return true;
+            if (urlParams.has('key')) {
+                urlParams.delete('key');
+                const remainingQuery = urlParams.toString();
+                const cleanedUrl = `${window.location.pathname}${remainingQuery ? `?${remainingQuery}` : ''}${window.location.hash}`;
+                window.history.replaceState({}, '', cleanedUrl);
             }
             if (urlParams.get('lock') === 'true' || urlParams.get('logout') === 'true') {
-                localStorage.removeItem(ADMIN_ACCESS_KEY);
+                sessionStorage.removeItem(ADMIN_ACCESS_KEY);
+                sessionStorage.removeItem(ADMIN_PIN_KEY);
                 return false;
             }
             // If someone passes ?admin=true without key, prompt for passcode instead of granting
-            if ((urlParams.get('admin') === 'true' || urlParams.get('studio') === 'true') && localStorage.getItem(ADMIN_ACCESS_KEY) !== 'true') {
+            if ((urlParams.get('admin') === 'true' || urlParams.get('studio') === 'true') && sessionStorage.getItem(ADMIN_ACCESS_KEY) !== 'true') {
+                urlParams.delete('admin');
+                urlParams.delete('studio');
+                const remainingQuery = urlParams.toString();
+                const cleanedUrl = `${window.location.pathname}${remainingQuery ? `?${remainingQuery}` : ''}${window.location.hash}`;
+                window.history.replaceState({}, '', cleanedUrl);
                 setTimeout(() => openAdminAuthModal(), 300);
                 return false;
             }
-            return localStorage.getItem(ADMIN_ACCESS_KEY) === 'true';
+            return sessionStorage.getItem(ADMIN_ACCESS_KEY) === 'true';
         }
 
         function isPublishMode() {
@@ -446,7 +478,7 @@
             // 2. Persist permanently to server database (survives refreshes, incognito, and other devices)
             fetch('/api/site-images', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: photoManagerApiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ target, image: dataUrl })
             }).then(r => r.json()).then(res => {
                 if (res.success) {
@@ -522,7 +554,7 @@
 
             fetch('/api/site-images/reset', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: photoManagerApiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ target })
             }).catch(() => {});
 
@@ -538,7 +570,7 @@
 
             fetch('/api/site-images/reset', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: photoManagerApiHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ target: 'all' })
             }).catch(() => {});
 

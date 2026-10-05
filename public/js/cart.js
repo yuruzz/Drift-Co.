@@ -76,6 +76,7 @@ function updateCartUI() {
     if (el.count) el.count.innerText = totalQty;
     if (el.totalItems) el.totalItems.innerText = totalQty;
     if (el.subtotal) el.subtotal.innerText = `₱${subtotal.toFixed(2)}`;
+    if (typeof updateCheckoutTotals === 'function') updateCheckoutTotals();
 
     if (!el.itemsContainer) return;
 

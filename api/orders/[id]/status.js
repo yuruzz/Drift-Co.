@@ -23,6 +23,9 @@ export default async function handler(req, res) {
     const id = String(req.query.id || '');
     const order = await getRecord('drift:orders', id);
     if (!order) return res.status(404).json({ success: false, error: 'Order not found.' });
+    if (order.paymentMethod === 'QR Ph' && order.paymentStatus !== 'Paid' && body.status !== 'Pending') {
+      return res.status(409).json({ success: false, error: 'QR Ph orders can only be fulfilled after payment is verified.' });
+    }
     order.status = body.status;
     await saveRecord('drift:orders', id, order);
     return res.status(200).json({ success: true, order });

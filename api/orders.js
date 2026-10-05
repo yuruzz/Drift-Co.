@@ -1,6 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { defaultSettings, dispatchOrderNotifications } from '../lib/notifications.js';
 import { getHash, redisCommand, saveRecord } from '../lib/redis.js';
 import { requireStudioAccess } from '../lib/studio-auth.js';
+import { createQrPhPayment } from '../lib/paymongo.js';
+import { verifyDeliveryQuote } from '../lib/delivery.js';
+import { calculateOrderPricing } from '../lib/order-pricing.js';
 
 const ORDERS_KEY = 'drift:orders';
 
@@ -16,6 +20,20 @@ function respondWithError(res, error) {
     success: false,
     error: error.message || 'Unable to access orders.',
   });
+}
+
+function calculateQrPhTotal(items) {
+  return items.reduce((sum, item) => {
+    const priceByVolume = { '40ml': 380, '50ml': 450 };
+    const price = priceByVolume[item?.volume];
+    const quantity = Number(item?.qty);
+    if (!price || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) {
+      const error = new Error('The bag contains an invalid item or quantity.');
+      error.statusCode = 400;
+      throw error;
+    }
+    return sum + price * quantity;
+  }, 0);
 }
 
 export default async function handler(req, res) {
@@ -36,7 +54,16 @@ export default async function handler(req, res) {
     }
 
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const { customerName, phone, address, paymentMethod, paymentReference, notes, items, total } = body;
+    const {
+      customerName,
+      phone,
+      addressDetails,
+      deliveryQuoteToken,
+      paymentMethod,
+      paymentReference,
+      notes,
+      items,
+    } = body;
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, error: 'Bag is empty or invalid items provided.' });
     }
@@ -46,21 +73,43 @@ export default async function handler(req, res) {
 
     const savedSettings = await redisCommand('GET', 'drift:notification-settings');
     const settings = savedSettings ? { ...defaultSettings, ...JSON.parse(savedSettings) } : { ...defaultSettings };
+    const isQrPhPayment = paymentMethod === 'QR Ph';
+    const pricing = calculateOrderPricing(items);
+    const subtotal = isQrPhPayment ? calculateQrPhTotal(items) : pricing.subtotal;
+    const delivery = verifyDeliveryQuote(deliveryQuoteToken, items);
+    if (isQrPhPayment && delivery.shippingConfirmationRequired) {
+      const error = new Error('QR Ph is unavailable until shipping charges are confirmed. Please choose Cash on Delivery or contact the store.');
+      error.statusCode = 400;
+      throw error;
+    }
+    const cleanAddressDetails = String(addressDetails || '').trim().slice(0, 200);
+    const orderTotal = subtotal + (delivery.deliveryFee || 0);
     const order = {
-      id: `DRFT-${Math.floor(100000 + Math.random() * 900000)}`,
+      id: `DRFT-${randomUUID().toUpperCase()}`,
       customerName: String(customerName).trim(),
       phone: String(phone).trim(),
-      address: String(address || '').trim(),
+      address: [delivery.address, cleanAddressDetails].filter(Boolean).join(', '),
+      subtotal,
+      deliveryFee: delivery.deliveryFee,
+      deliveryDistanceKm: delivery.distanceKm,
+      shippingWeightGrams: delivery.shippingWeightGrams,
+      shippingZone: delivery.zone,
+      shippingOrigin: delivery.origin,
+      shippingConfirmationRequired: delivery.shippingConfirmationRequired,
+      shippingConfirmationReasons: delivery.shippingConfirmationReasons,
       paymentMethod: String(paymentMethod || 'Cash on Delivery (COD)').trim(),
       ...(paymentReference ? { paymentReference: String(paymentReference).trim() } : {}),
       ...(notes ? { notes: String(notes).trim() } : {}),
       items,
-      total: Number(total) || items.reduce((sum, item) => sum + (Number(item.price) * Number(item.qty)), 0),
+      total: orderTotal,
       status: 'Pending',
+      ...(isQrPhPayment ? { paymentStatus: 'Pending' } : {}),
       createdAt: new Date().toISOString(),
       notificationsSent: [],
     };
 
+    const payment = isQrPhPayment ? await createQrPhPayment(orderTotal, order.id) : null;
+    if (payment) order.paymentIntentId = payment.paymentIntentId;
     await saveRecord(ORDERS_KEY, order.id, order);
 
     try {
@@ -81,6 +130,7 @@ export default async function handler(req, res) {
       success: true,
       message: 'Order placed successfully!',
       order,
+      ...(payment ? { payment: { qrCodeDataUrl: payment.qrCodeDataUrl } } : {}),
     });
   } catch (error) {
     return respondWithError(res, error);

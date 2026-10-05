@@ -9,6 +9,7 @@
     <meta name="description" content="Explore our exclusive collection of luxury signature scents." />
 
     <link rel="icon" type="image/jpeg" href="/logo.jfif?v=2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 
     <!-- Open Graph / Facebook / Messenger / LinkedIn -->
     <meta property="og:type" content="website" />
@@ -258,7 +259,7 @@
             <div>
                 <span class="text-xs uppercase tracking-widest-plus text-[#9E7D3B] font-semibold block mb-1">Official Catalog</span>
                 <h2 class="text-3xl sm:text-4xl font-cormorant font-light text-[#1A1817]">Featured Fragrances</h2>
-                <p class="text-stone-500 text-sm mt-1">20 Curated Editions • 40ml (₱380) & 50ml (₱450) • 30% Fragrance Oil</p>
+                <p class="text-stone-500 text-sm mt-1">20 Curated Editions • 40ml (₱380) & 50ml (₱550) • 30% Fragrance Oil</p>
             </div>
 
             <!-- Search & Filters -->
@@ -360,7 +361,7 @@
                             <span id="discGender" class="text-[10px] uppercase tracking-widest text-stone-500 font-medium">Unisex</span>
                         </div>
                         <h3 id="discTitle" class="text-2xl sm:text-3xl font-cormorant font-normal text-[#1A1817]">Baccarat Rouge (Version of MFK)</h3>
-                        <p id="discPrice" class="text-[#C5A059] font-medium text-base">₱380.00 <span class="text-xs text-stone-400 font-normal">/ 40ml (50ml Deluxe ₱450.00)</span></p>
+                        <p id="discPrice" class="text-[#C5A059] font-medium text-base">₱380.00 <span class="text-xs text-stone-400 font-normal">/ 40ml (50ml Deluxe ₱550.00)</span></p>
                         <p id="discDesc" class="text-stone-600 text-sm leading-relaxed">
                             A luminous, crystalline poetic alchemy of saffron blossoms, luminous jasmine petals, amberwood, and warm freshly cut cedarwood resin.
                         </p>
@@ -763,20 +764,20 @@
             </div>
             <h2 class="text-3xl sm:text-4xl font-cormorant font-light text-[#1A1817] mb-2">Track Your Fragrance Parcel</h2>
             <p class="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto mb-6 font-light leading-relaxed">
-                Hand-blended with 30% oil concentration in our atelier. Enter your Order Reference ID (e.g. <span class="font-mono font-semibold text-stone-800">DRFT-444818</span>) or the mobile number provided at checkout.
+                Hand-blended with 30% oil concentration in our atelier. Enter the full Order Reference ID from your checkout receipt.
             </p>
 
             <div class="bg-white p-5 sm:p-7 rounded-sm shadow-md border border-[#E8E2D8] max-w-xl mx-auto text-left">
                 <form onsubmit="handleSectionTrackSubmit(event)" class="space-y-3">
                     <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold">
-                        Enter Order ID or Mobile Number
+                        Enter Full Order Reference ID
                     </label>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <div class="relative flex-1">
                             <input 
                                 type="text" 
                                 id="sectionTrackInput" 
-                                placeholder="e.g. DRFT-444818 or 09181234567" 
+                                placeholder="Enter the full reference from your receipt"
                                 class="w-full pl-9 pr-3 py-3 text-xs bg-[#FAF8F5] border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059] font-mono text-stone-900"
                                 required
                             >
@@ -795,10 +796,6 @@
                         <span>NCR: 1–3 business days • Provincial: 3–5 days</span>
                     </span>
                     <div class="flex items-center gap-1.5">
-                        <span class="text-[10px] uppercase font-semibold text-stone-400">Samples:</span>
-                        <button type="button" onclick="quickTrackOrder('DRFT-444818')" class="text-[#C5A059] hover:underline font-mono text-[10px]">#DRFT-444818</button>
-                        <span class="text-stone-300">•</span>
-                        <button type="button" onclick="quickTrackOrder('DRFT-973766')" class="text-[#C5A059] hover:underline font-mono text-[10px]">#DRFT-973766</button>
                     </div>
                 </div>
             </div>
@@ -953,7 +950,7 @@
                             </button>
                             <button type="button" id="modalSizeBtn50ml" onclick="selectModalSize('50ml')" class="flex-1 py-1.5 px-3 border border-stone-300 bg-white hover:border-black text-stone-800 text-xs font-semibold rounded-xs transition-all flex items-center justify-between cursor-pointer">
                                 <span>50ml Deluxe</span>
-                                <span class="font-mono text-[#C5A059]">₱450</span>
+                                <span class="font-mono text-[#C5A059]">₱550</span>
                             </button>
                         </div>
                     </div>
@@ -1066,12 +1063,16 @@
 
             <div id="checkoutFormContainer" class="p-6 overflow-y-auto space-y-4">
                 <!-- Order Summary Banner -->
-                <div class="bg-[#F3EEE7] p-3.5 rounded-sm border border-[#E8E2D8] flex items-center justify-between">
+                <div class="bg-[#F3EEE7] p-3.5 rounded-sm border border-[#E8E2D8]">
                     <div>
                         <span class="text-xs text-stone-600 block" id="checkoutItemCount">0 items in bag</span>
                         <span class="text-[11px] text-stone-500">30% High-Grade Fragrance Oil Concentration</span>
                     </div>
-                    <span id="checkoutTotalAmount" class="text-lg font-cormorant font-bold text-[#C5A059]">₱0.00</span>
+                    <div class="mt-2 space-y-1 text-xs">
+                        <div class="flex justify-between"><span class="text-stone-600">Subtotal</span><span id="checkoutSubtotal">₱0.00</span></div>
+                        <div class="flex justify-between"><span class="text-stone-600">Delivery</span><span id="checkoutDeliveryFee">Select an address</span></div>
+                        <div class="flex justify-between border-t border-[#E8E2D8] pt-1 font-semibold"><span id="checkoutTotalLabel">Total</span><span id="checkoutTotalAmount" class="text-[#C5A059]">Select an address</span></div>
+                    </div>
                 </div>
 
                 <!-- Form -->
@@ -1090,6 +1091,7 @@
                             <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Payment Method <span class="text-red-500">*</span></label>
                             <select id="orderPaymentMethod" onchange="handlePaymentMethodChange()" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059] font-medium text-stone-900">
                                 <option value="Cash on Delivery (COD)" selected>Cash on Delivery (COD) — Available</option>
+                                <option value="QR Ph" disabled class="text-stone-400">QR Ph (Currently Unavailable)</option>
                                 <option value="GCash" disabled class="text-stone-400">GCash (Currently Unavailable)</option>
                                 <option value="BPI Bank Transfer" disabled class="text-stone-400">BPI Bank Transfer (Currently Unavailable)</option>
                                 <option value="BDO Bank Transfer" disabled class="text-stone-400">BDO Bank Transfer (Currently Unavailable)</option>
@@ -1104,30 +1106,47 @@
 
                     <div>
                         <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Delivery Address <span class="text-red-500">*</span></label>
-                        <textarea id="orderAddress" required rows="2" placeholder="Street, Barangay, City, Province, Zip code" class="w-full px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]"></textarea>
+                        <div class="flex gap-2">
+                            <input type="search" id="deliveryAddressSearch" maxlength="160" placeholder="Search street, barangay, city, or postal code" class="min-w-0 flex-1 px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
+                            <button type="button" id="deliveryAddressSearchButton" class="px-3 py-2 bg-[#1A1817] text-white text-[10px] uppercase tracking-wider rounded-xs">Search</button>
+                        </div>
+                        <p class="text-[10px] text-stone-500 mt-1">Search manually or tap the map to pin your delivery location.</p>
+                        <div id="deliveryAddressResults" class="hidden max-h-32 overflow-y-auto border border-[#E8E2D8] divide-y divide-[#E8E2D8]"></div>
+                        <div id="deliveryMap" class="w-full h-56 mt-2 border border-[#E8E2D8] rounded-xs bg-stone-100" aria-label="Select delivery location on map"></div>
+                        <button type="button" id="useDeliveryMapPin" disabled class="mt-2 px-3 py-2 border border-[#E8E2D8] text-stone-700 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-50">Use selected map pin</button>
+                        <p id="deliveryAddressStatus" class="text-[10px] text-stone-500 mt-1">Select an address to calculate delivery.</p>
+                        <p class="text-[10px] text-stone-400 mt-1">Search and map coordinates are checked using public OpenStreetMap services. Don’t include a name in your search; add private house/unit details below. Map data © OpenStreetMap contributors.</p>
+                        <textarea id="orderAddress" readonly rows="2" placeholder="Select an address above" class="w-full mt-2 px-3 py-2 text-xs bg-stone-50 border border-[#E8E2D8] rounded-xs focus:outline-none"></textarea>
+                        <input type="text" id="orderAddressDetails" maxlength="200" placeholder="House/unit number, subdivision, or nearby landmark (optional)" class="w-full mt-2 px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
                     </div>
 
                     <div class="pt-2">
                         <button type="submit" id="submitOrderBtn" class="w-full py-3.5 bg-[#1A1817] hover:bg-[#C5A059] text-white text-xs uppercase tracking-widest font-semibold transition-all rounded-xs shadow-md cursor-pointer flex items-center justify-center gap-2">
                             <span>Confirm & Place Order</span>
                         </button>
-                        <p class="text-[10px] text-stone-400 text-center mt-2">Zero advance risk for COD. Our concierge contacts you for dispatch confirmation.</p>
+                        <p class="text-[10px] text-stone-400 text-center mt-2">COD is available. QR Ph payments use a unique, exact-amount code and are confirmed automatically.</p>
                     </div>
                 </form>
             </div>
 
             <!-- Success Confirmation View -->
             <div id="checkoutSuccessView" class="hidden p-6 sm:p-8 text-center space-y-4">
-                <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-xs">✓</div>
+                <div id="successOrderIcon" class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-xs">✓</div>
                 <div>
-                    <h3 class="font-cormorant text-3xl font-light text-stone-900">Order Confirmed!</h3>
-                    <p class="text-xs text-stone-500 mt-1">Notification & order receipt dispatched</p>
+                    <h3 id="successOrderTitle" class="font-cormorant text-3xl font-light text-stone-900">Order Confirmed!</h3>
+                    <p id="successOrderSubtitle" class="text-xs text-stone-500 mt-1">Notification & order receipt dispatched</p>
                 </div>
 
                 <!-- Instant Notification Status Banner -->
-                <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] p-2.5 rounded-xs flex items-center justify-center gap-2 max-w-sm mx-auto">
+                <div id="successPaymentBanner" class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] p-2.5 rounded-xs flex items-center justify-center gap-2 max-w-sm mx-auto">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span id="successNotificationStatus">Alert dispatched to store concierge & SMS dispatch hub</span>
+                </div>
+
+                <div id="successQrPaymentBox" class="hidden max-w-sm mx-auto p-4 bg-white border border-[#E8E2D8] rounded-xs space-y-2">
+                    <img id="successQrCode" alt="Unique QR Ph code for this order" class="w-56 h-56 object-contain mx-auto">
+                    <p class="text-xs font-semibold text-stone-900">Scan with GCash, BPI, BDO Pay, or another participating app.</p>
+                    <p class="text-[11px] text-stone-500">Pay the exact amount shown above. This QR code is unique to this order and expires after 30 minutes.</p>
                 </div>
 
                 <!-- Order Details Card -->
@@ -1147,6 +1166,14 @@
                     <div class="flex justify-between">
                         <span class="text-stone-500">Delivery Address:</span>
                         <span id="successAddress" class="text-right text-stone-700 max-w-[200px] truncate">-</span>
+                    </div>
+                    <div id="successSubtotalRow" class="hidden flex justify-between">
+                        <span class="text-stone-500">Items Subtotal:</span>
+                        <span id="successSubtotal" class="text-stone-700">-</span>
+                    </div>
+                    <div id="successDeliveryFeeRow" class="hidden flex justify-between">
+                        <span class="text-stone-500">Delivery:</span>
+                        <span id="successDeliveryFee" class="text-stone-700">-</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-stone-500">Total Payable:</span>
@@ -1396,20 +1423,9 @@
                             <span class="text-xs uppercase tracking-wider font-semibold text-stone-800 flex items-center gap-1.5">
                                 <span>🔒 3. Admin Passcode & Studio Security</span>
                             </span>
-                            <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-xs">PIN Protected</span>
+                            <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-xs">Server verified</span>
                         </div>
-                        <p class="text-xs text-stone-500">Only visitors who enter this PIN can unlock Studio Mode via <code class="bg-stone-100 px-1 py-0.5 rounded-xs text-stone-700">Ctrl + Shift + A</code>, edit catalog products, or view confidential orders.</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                            <div>
-                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Owner Security PIN / Passcode</label>
-                                <div class="flex items-center gap-2">
-                                    <input type="text" id="cfgAdminPin" placeholder="2010drift" class="flex-1 px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono tracking-widest text-stone-900" maxlength="20">
-                                    <button type="button" onclick="updateOwnerPinFromSettings()" class="px-3 py-2 bg-stone-100 hover:bg-[#C5A059] hover:text-white text-stone-800 rounded-xs text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap">
-                                        Update PIN
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <p class="text-xs text-stone-500">The Studio PIN is checked by the server and is held only for the current browser tab. Set or rotate <code class="bg-stone-100 px-1 py-0.5 rounded-xs text-stone-700">STUDIO_ADMIN_PIN</code> in your hosting provider’s environment settings. Use a long, unique secret; do not put it in this page, source code, or a URL.</p>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-2">
@@ -1426,9 +1442,15 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                             <h4 class="font-cormorant text-xl font-semibold text-stone-900">Bank Accounts & Payment Settings</h4>
-                            <p class="text-xs text-stone-600 mt-0.5">Configure your store's BPI, BDO, and GCash account numbers so customers can send direct payments during checkout.</p>
+                            <p class="text-xs text-stone-600 mt-0.5">Configure the store's receiving account details for customer-initiated transfers. Never request or store a customer's bank password, PIN, one-time code, or full card details. Use an authorized hosted payment gateway if you need online payment authorization.</p>
                         </div>
                     </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xs text-xs text-blue-950 space-y-1">
+                    <p class="font-semibold">Dynamic QR Ph via PayMongo</p>
+                    <p>Configure <code>PAYMONGO_SECRET_KEY</code>, <code>PAYMONGO_PUBLIC_KEY</code>, and <code>PAYMONGO_WEBHOOK_SECRET</code> in your hosting environment, then redeploy. Set the PayMongo webhook URL to <code>https://your-domain/api/payments/paymongo/webhook</code> and subscribe to <code>payment.paid</code>, <code>payment.failed</code>, and <code>qrph.expired</code>. Never enter API secrets here or in browser code.</p>
+                    <p id="qrphGatewayStatus" class="font-semibold">QR Ph availability is determined by secure server configuration.</p>
                 </div>
 
                 <form id="paymentSettingsForm" onsubmit="savePaymentSettings(event)" class="space-y-4">
@@ -1447,11 +1469,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">BPI Account Name</label>
-                                <input type="text" id="cfgBpiAccountName" placeholder="e.g. Drift & Co. Fragrances" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                                <input type="text" id="cfgBpiAccountName" placeholder="Enter the receiving account name" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">BPI Account Number</label>
-                                <input type="text" id="cfgBpiAccountNumber" placeholder="e.g. 0019-2834-51" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
+                                <input type="text" id="cfgBpiAccountNumber" placeholder="Enter the receiving account number" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
                             </div>
                         </div>
                         <div>
@@ -1475,11 +1497,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">BDO Account Name</label>
-                                <input type="text" id="cfgBdoAccountName" placeholder="e.g. Drift & Co. Fragrances" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                                <input type="text" id="cfgBdoAccountName" placeholder="Enter the receiving account name" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">BDO Account Number</label>
-                                <input type="text" id="cfgBdoAccountNumber" placeholder="e.g. 0068-1234-5678" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
+                                <input type="text" id="cfgBdoAccountNumber" placeholder="Enter the receiving account number" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
                             </div>
                         </div>
                         <div>
@@ -1503,11 +1525,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">GCash Account Name</label>
-                                <input type="text" id="cfgGcashAccountName" placeholder="e.g. Drift & Co. Store" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
+                                <input type="text" id="cfgGcashAccountName" placeholder="Enter the receiving account name" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059]">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">GCash Mobile Number</label>
-                                <input type="text" id="cfgGcashNumber" placeholder="e.g. 0917 123 4567" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
+                                <input type="text" id="cfgGcashNumber" placeholder="Enter the store's receiving GCash number" class="w-full px-3 py-2 text-xs border border-stone-300 rounded-xs focus:outline-none focus:border-[#C5A059] font-mono">
                             </div>
                         </div>
                         <div>
@@ -1563,14 +1585,14 @@
             <div class="p-4 bg-[#FAF8F5] border-b border-[#E8E2D8]">
                 <form id="orderTrackingForm" onsubmit="handleTrackOrderSubmit(event)" class="space-y-2">
                     <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold">
-                        Enter Order ID or Mobile Number
+                        Enter Full Order Reference ID
                     </label>
                     <div class="flex gap-2">
                         <div class="relative flex-1">
                             <input 
                                 type="text" 
                                 id="trackOrderInput" 
-                                placeholder="e.g. DRFT-444818, 444818, or 09181234567" 
+                                placeholder="Enter the full reference from your receipt"
                                 class="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059] font-mono text-stone-900"
                                 required
                             >
@@ -1586,9 +1608,6 @@
                     </div>
                     <!-- Quick Recent Order Chips -->
                     <div id="trackRecentChips" class="flex items-center gap-2 pt-1 flex-wrap text-[11px] text-stone-500">
-                        <span class="text-[10px] uppercase font-semibold text-stone-400">Quick Samples:</span>
-                        <button type="button" onclick="quickTrackOrder('DRFT-444818')" class="px-2 py-0.5 bg-stone-200 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-mono transition-colors cursor-pointer">DRFT-444818</button>
-                        <button type="button" onclick="quickTrackOrder('DRFT-973766')" class="px-2 py-0.5 bg-stone-200 hover:bg-[#C5A059] hover:text-white rounded-xs text-[10px] font-mono transition-colors cursor-pointer">DRFT-973766</button>
                     </div>
                 </form>
             </div>
@@ -1602,7 +1621,7 @@
                     </div>
                     <h4 class="font-cormorant text-2xl font-normal text-stone-800">Track Your Drift & Co. Parcel</h4>
                     <p class="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
-                        Enter your Order Reference ID from your checkout receipt or SMS notification (e.g. <span class="font-mono text-stone-700">DRFT-444818</span>). You can also search using the customer mobile number.
+                        Enter the full Order Reference ID shown on your checkout receipt or order notification.
                     </p>
                 </div>
 
@@ -1740,11 +1759,12 @@
 
     <!-- Modular Application Scripts -->
     <script src="/js/catalog-data.js?v=11"></script>
-    <script src="/js/photo-manager.js?v=11"></script>
+    <script src="/js/photo-manager.js?v=12"></script>
     <script src="/js/cart.js?v=11"></script>
-    <script src="/js/checkout.js?v=11"></script>
-    <script src="/js/admin-dashboard.js?v=11"></script>
-    <script src="/js/tracking.js?v=11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="/js/checkout.js?v=15"></script>
+    <script src="/js/admin-dashboard.js?v=13"></script>
+    <script src="/js/tracking.js?v=13"></script>
 
     <!-- Page Interaction & Catalog Controller -->
     <script>
@@ -1933,8 +1953,8 @@
                                 <button type="button" onclick="event.stopPropagation(); setCardProductSize(${item.id}, '40ml', 380)" id="cardBtn_${item.id}_40ml" class="px-2 py-0.5 text-[10px] font-semibold rounded-xs border transition-all cursor-pointer ${currentSize.volume === '40ml' ? 'border-[#1A1817] bg-[#1A1817] text-white shadow-xs' : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'}">
                                     40ml · ₱380
                                 </button>
-                                <button type="button" onclick="event.stopPropagation(); setCardProductSize(${item.id}, '50ml', 450)" id="cardBtn_${item.id}_50ml" class="px-2 py-0.5 text-[10px] font-semibold rounded-xs border transition-all cursor-pointer ${currentSize.volume === '50ml' ? 'border-[#1A1817] bg-[#1A1817] text-white shadow-xs' : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'}">
-                                    50ml · ₱450
+                                <button type="button" onclick="event.stopPropagation(); setCardProductSize(${item.id}, '50ml', 550)" id="cardBtn_${item.id}_50ml" class="px-2 py-0.5 text-[10px] font-semibold rounded-xs border transition-all cursor-pointer ${currentSize.volume === '50ml' ? 'border-[#1A1817] bg-[#1A1817] text-white shadow-xs' : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700'}">
+                                    50ml · ₱550
                                 </button>
                             </div>
                         </div>
@@ -2118,7 +2138,7 @@
                 document.getElementById('discTitle').innerText = `${match.name} (Version of ${match.inspiration})`;
                 document.getElementById('discCategory').innerText = `${categoryKey.toUpperCase()} HARMONY • 30% OIL`;
                 document.getElementById('discGender').innerText = match.gender;
-                document.getElementById('discPrice').innerHTML = `₱380.00 <span class="text-xs text-stone-400 font-normal">/ 40ml (50ml Deluxe ₱450.00)</span>`;
+                document.getElementById('discPrice').innerHTML = `₱380.00 <span class="text-xs text-stone-400 font-normal">/ 40ml (50ml Deluxe ₱550.00)</span>`;
                 document.getElementById('discDesc').innerText = match.description;
                 document.getElementById('discNotes').innerText = `Top: ${match.topNotes} | Heart: ${match.heartNotes} | Base: ${match.baseNotes}`;
                 
@@ -2136,7 +2156,7 @@
         let currentModalSize = { volume: '40ml', price: 380 };
 
         function selectModalSize(volume) {
-            const price = volume === '50ml' ? 450 : 380;
+            const price = volume === '50ml' ? 550 : 380;
             currentModalSize = { volume, price };
 
             const productList = window.products || products || [];
