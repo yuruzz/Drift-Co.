@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
@@ -24,9 +23,8 @@ const { default: orderStatusHandler } = await import('../api/orders/[id]/status.
 const { default: statsHandler } = await import('../api/stats.js');
 const { default: paymentSettingsHandler } = await import('../api/payments-settings.js');
 const { default: studioAuthHandler } = await import('../api/studio-auth.js');
-const { default: paymongoWebhookHandler } = await import('../api/paymongo-webhook.js');
 const { default: orderTrackingHandler } = await import('../api/orders/track/[query].js');
-const { paymongoQrPhReady } = await import('../lib/paymongo.js');
+const { paymongoQrPhReady, verifyPaymongoWebhook } = await import('../lib/paymongo.js');
 
 const hashes = new Map();
 const values = new Map();
@@ -488,7 +486,7 @@ test('PayMongo stays disabled unless its explicit feature flag is enabled', asyn
   }
 });
 
-test('QR Ph orders get a unique PayMongo QR and are marked paid only after webhook verification', async () => {
+test('QR Ph orders get a unique PayMongo QR when the disabled feature is explicitly enabled', async () => {
   const orderResponse = responseRecorder();
   await ordersHandler({
     method: 'POST',
@@ -524,63 +522,10 @@ test('QR Ph orders get a unique PayMongo QR and are marked paid only after webho
   }, deniedStatus);
   assert.equal(deniedStatus.statusCode, 409);
 
-  const paymentIntent = paymongoIntents.get(orderResponse.body.order.paymentIntentId);
-  paymentIntent.status = 'succeeded';
-  const webhookBody = JSON.stringify({
-    data: {
-      attributes: {
-        type: 'payment.paid',
-        data: {
-          id: 'pay_test_1',
-          attributes: { payment_intent_id: orderResponse.body.order.paymentIntentId },
-        },
-      },
-    },
-  });
-  const timestamp = '1791118800';
-  const signature = createHmac('sha256', process.env.PAYMONGO_WEBHOOK_SECRET)
-    .update(`${timestamp}.${webhookBody}`)
-    .digest('hex');
-  const webhookRequest = () => ({
-    method: 'POST',
-    headers: { 'paymongo-signature': `t=${timestamp},te=${signature},li=invalid` },
-    body: Buffer.from(webhookBody),
-  });
-  paymentIntent.amount += 1;
-  const mismatchedAmount = responseRecorder();
-  await paymongoWebhookHandler(webhookRequest(), mismatchedAmount);
-  assert.equal(mismatchedAmount.statusCode, 400);
-  paymentIntent.amount -= 1;
-
-  const webhookResponse = responseRecorder();
-  await paymongoWebhookHandler(webhookRequest(), webhookResponse);
-  assert.equal(webhookResponse.statusCode, 200);
-
-  const savedOrder = JSON.parse(hashes.get('drift:orders').get(orderResponse.body.order.id));
-  assert.equal(savedOrder.paymentStatus, 'Paid');
-  assert.equal(savedOrder.status, 'Confirmed');
-  const paidStats = responseRecorder();
-  await statsHandler({ method: 'GET' }, paidStats);
-  assert.equal(paidStats.body.stats.totalRevenue, 1070);
-
-  const allowedStatus = responseRecorder();
-  await orderStatusHandler({
-    method: 'PATCH',
-    headers: { 'x-studio-pin': studioPin },
-    query: { id: orderResponse.body.order.id },
-    body: { status: 'Confirmed' },
-  }, allowedStatus);
-  assert.equal(allowedStatus.statusCode, 200);
 });
 
-test('PayMongo webhook rejects invalid signatures', async () => {
-  const response = responseRecorder();
-  await paymongoWebhookHandler({
-    method: 'POST',
-    headers: { 'paymongo-signature': 't=1,te=invalid,li=invalid' },
-    body: Buffer.from('{}'),
-  }, response);
-  assert.equal(response.statusCode, 401);
+test('PayMongo signature verification rejects invalid signatures', async () => {
+  assert.equal(verifyPaymongoWebhook(Buffer.from('{}'), 't=1,te=invalid,li=invalid'), false);
 });
 
 test('partner inquiries persist and notify through saved webhook and ntfy settings', async () => {

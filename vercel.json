@@ -23,18 +23,6 @@
       "destination": "/api/studio-auth.js"
     },
     {
-      "source": "/api/orders/:id/status",
-      "destination": "/api/order-status.js?id=:id"
-    },
-    {
-      "source": "/api/orders/:id/notify",
-      "destination": "/api/order-notify.js?id=:id"
-    },
-    {
-      "source": "/api/orders/track/:query",
-      "destination": "/api/order-track.js?query=:query"
-    },
-    {
       "source": "/api/orders",
       "destination": "/api/orders.js"
     },
@@ -45,10 +33,6 @@
     {
       "source": "/api/stats",
       "destination": "/api/stats.js"
-    },
-    {
-      "source": "/api/payments/paymongo/webhook",
-      "destination": "/api/paymongo-webhook.js"
     },
     {
       "source": "/api/payments/settings",
