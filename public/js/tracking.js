@@ -218,6 +218,7 @@ function escapeTrackingHtml(value) {
             const { order, tracking } = data;
             const container = document.getElementById('trackResultState');
             if (!container) return;
+            const isPickup = order.fulfillmentMethod === 'pickup';
 
             const statusColors = {
                 Pending: {
@@ -247,6 +248,14 @@ function escapeTrackingHtml(value) {
             };
 
             const currentConfig = statusColors[order.status] || statusColors['Pending'];
+            const currentStatusLabel = isPickup
+                ? ({
+                    Pending: 'Order Received — Pickup Order',
+                    Confirmed: 'Confirmed — Being Prepared for Pickup',
+                    Shipped: 'Ready for Pickup at Pila Office',
+                    Delivered: 'Picked Up & Completed',
+                }[order.status] || currentConfig.label)
+                : currentConfig.label;
             const totalLabel = order.shippingConfirmationRequired ? 'Items Subtotal (Shipping to Confirm)' : 'Total';
             const totalDisplay = `₱${Number(order.total).toFixed(2)}${order.shippingConfirmationRequired ? ' (provisional)' : ''}`;
             const whatsappAmount = order.shippingConfirmationRequired
@@ -277,7 +286,7 @@ function escapeTrackingHtml(value) {
                         <div class="flex sm:flex-col items-start sm:items-end justify-between gap-1">
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${currentConfig.badge} shadow-xs">
                                 <span class="w-2 h-2 rounded-full ${currentConfig.dot} animate-pulse"></span>
-                                <span>${currentConfig.label}</span>
+                                <span>${currentStatusLabel}</span>
                             </span>
                             <span class="text-[11px] text-stone-400 font-light">Placed on ${createdDateFormatted}</span>
                         </div>
@@ -285,12 +294,12 @@ function escapeTrackingHtml(value) {
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
                         <div class="space-y-1">
-                            <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-medium">Estimated Arrival</span>
+                            <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-medium">${isPickup ? 'Pickup' : 'Estimated Arrival'}</span>
                             <span class="text-sm font-semibold text-[#C5A059]">${escapeTrackingHtml(tracking.estimatedDelivery)}</span>
-                            <p class="text-[11px] text-stone-300 font-light">Express nationwide fragile parcel courier</p>
+                            <p class="text-[11px] text-stone-300 font-light">${isPickup ? 'Drift & Co. Office, Bulilan Norte, Pila, Laguna' : 'Express nationwide fragile parcel courier'}</p>
                         </div>
                         <div class="space-y-1 sm:text-right">
-                            <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-medium">Courier & Waybill</span>
+                            <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-medium">${isPickup ? 'Pickup Reference' : 'Courier & Waybill'}</span>
                             <span class="font-mono text-xs font-semibold text-white">${escapeTrackingHtml(tracking.trackingNumber)}</span>
                             <p class="text-[11px] text-stone-400">${escapeTrackingHtml(tracking.courier)}</p>
                         </div>
@@ -302,7 +311,7 @@ function escapeTrackingHtml(value) {
                     <div class="flex items-center justify-between border-b border-stone-100 pb-2">
                         <span class="text-xs uppercase tracking-wider font-semibold text-stone-900 flex items-center gap-1.5">
                             <svg class="w-4 h-4 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>Atelier & Courier Timeline</span>
+                            <span>${isPickup ? 'Atelier & Pickup Timeline' : 'Atelier & Courier Timeline'}</span>
                         </span>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-[#9E7D3B]">Step ${escapeTrackingHtml(tracking.currentStep)} of 4</span>
                     </div>
@@ -356,15 +365,17 @@ function escapeTrackingHtml(value) {
                 <!-- Delivery summary without customer address or contact information -->
                 <div class="bg-[#FAF8F5] border border-[#E8E2D8] p-4 rounded-xs text-xs space-y-2">
                     <span class="text-[11px] uppercase tracking-wider font-semibold text-stone-800 block border-b border-stone-200 pb-1.5">
-                        Delivery summary
+                        ${isPickup ? 'Pickup summary' : 'Delivery summary'}
                     </span>
                     <div class="space-y-1 text-stone-700 pt-1">
-                        ${order.shippingConfirmationRequired
+                        ${isPickup
+                            ? `<p><strong class="text-stone-900">Pickup:</strong> Free at the Drift & Co. Office.</p>`
+                            : order.shippingConfirmationRequired
                             ? `<p class="text-amber-800"><strong>Shipping:</strong> Charge to be confirmed by Drift & Co. before dispatch.</p>`
                             : Number.isFinite(Number(order.deliveryFee))
                                 ? `<p><strong class="text-stone-900">${order.shippingZone ? 'J&T delivery' : 'Delivery charge'}:</strong> ${order.deliveryFee === 0 ? 'Free' : `₱${Number(order.deliveryFee).toFixed(2)}`}${order.shippingZone ? ` (${escapeTrackingHtml(order.shippingZone)})` : ''}</p>`
                                 : ''}
-                        ${order.shippingOrigin ? `<p><strong class="text-stone-900">Dispatch office:</strong> ${escapeTrackingHtml(order.shippingOrigin)}</p>` : ''}
+                        ${order.shippingOrigin ? `<p><strong class="text-stone-900">${isPickup ? 'Pickup location:' : 'Dispatch office:'}</strong> ${escapeTrackingHtml(order.shippingOrigin)}</p>` : ''}
                     </div>
                     <div class="border-t border-stone-200 pt-2 flex items-center justify-between text-sm">
                         <span class="font-semibold text-stone-800">${totalLabel}:</span>
@@ -401,7 +412,15 @@ function escapeTrackingHtml(value) {
                 copyToClipboard(String(order.id), 'Order ID copied!');
             });
             container.querySelector('[data-copy-tracking-summary]')?.addEventListener('click', () => {
-                copyTrackingSummary(order.id, order.status, tracking.trackingNumber, order.total, order.shippingConfirmationRequired);
+                copyTrackingSummary(
+                    order.id,
+                    order.status,
+                    tracking.trackingNumber,
+                    order.total,
+                    order.shippingConfirmationRequired,
+                    isPickup,
+                    order.shippingOrigin,
+                );
             });
         }
 
@@ -413,11 +432,12 @@ function escapeTrackingHtml(value) {
             });
         }
 
-        function copyTrackingSummary(orderId, status, trackingNo, total, shippingConfirmationRequired = false) {
+        function copyTrackingSummary(orderId, status, trackingNo, total, shippingConfirmationRequired = false, isPickup = false, pickupLocation = '') {
             const summary = `DRIFT & CO. PARCEL TRACKING SUMMARY\n` +
                 `Order ID: ${orderId}\n` +
                 `Status: ${status}\n` +
-                `Courier Waybill: ${trackingNo}\n` +
+                `${isPickup ? 'Pickup Reference' : 'Courier Waybill'}: ${trackingNo}\n` +
+                (isPickup ? `Pickup Location: ${pickupLocation}\n` : '') +
                 `${shippingConfirmationRequired ? 'Items subtotal (shipping to confirm)' : 'Total'}: ₱${Number(total).toFixed(2)}\n` +
                 `Concierge Support: 09569310005 | drift&co2010@gmail.com`;
             copyToClipboard(summary, 'Tracking summary copied!');

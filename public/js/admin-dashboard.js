@@ -682,7 +682,9 @@
                         const notifLogs = (order.notificationsSent || []).map(log => log.channel).join(', ') || 'SMS & App Dispatch';
                         const isDelivered = order.status === 'Delivered';
                         const totalLabel = order.shippingConfirmationRequired ? 'Items subtotal (provisional)' : 'Total';
-                        const shippingSummary = order.shippingConfirmationRequired
+                        const shippingSummary = order.fulfillmentMethod === 'pickup'
+                            ? `<p class="pt-1"><strong>Pickup:</strong> No delivery fee • ${escapeAdminHtml(order.shippingOrigin || 'Drift & Co. Office, Pila, Laguna')}</p>`
+                            : order.shippingConfirmationRequired
                             ? `<p class="pt-1 text-amber-800"><strong>Shipping:</strong> Confirmation required${order.shippingConfirmationReasons?.length ? ` — ${escapeAdminHtml(order.shippingConfirmationReasons.join(' '))}` : ''}</p>`
                             : order.shippingZone
                                 ? `<p class="pt-1"><strong>J&T delivery:</strong> ${order.deliveryFee === 0 ? 'Free' : `₱${Number(order.deliveryFee).toFixed(2)}`} • ${escapeAdminHtml(order.shippingZone)} • ${escapeAdminHtml(order.shippingWeightGrams || 0)} g • From ${escapeAdminHtml(order.shippingOrigin || 'office not recorded')}</p>`
@@ -730,7 +732,7 @@
                                     ${order.paymentStatus ? `<p class="pt-0.5"><strong class="text-stone-700">Payment status:</strong> <span class="font-semibold ${order.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-700'}">${escapeAdminHtml(order.paymentStatus)}</span></p>` : ''}
                                 </div>
                                 <div>
-                                    <p><strong class="text-stone-700">Address:</strong> ${escapeAdminHtml(order.address || 'Not provided')}</p>
+                                    <p><strong class="text-stone-700">${order.fulfillmentMethod === 'pickup' ? 'Pickup location:' : 'Delivery address:'}</strong> ${escapeAdminHtml(order.address || 'Not provided')}</p>
                                     ${shippingSummary}
                                     ${order.notes ? `<p><strong class="text-stone-700">Notes:</strong> ${escapeAdminHtml(order.notes)}</p>` : ''}
                                     <div class="pt-1">

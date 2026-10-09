@@ -1070,7 +1070,7 @@
                     </div>
                     <div class="mt-2 space-y-1 text-xs">
                         <div class="flex justify-between"><span class="text-stone-600">Subtotal</span><span id="checkoutSubtotal">₱0.00</span></div>
-                        <div class="flex justify-between"><span class="text-stone-600">Delivery</span><span id="checkoutDeliveryFee">Select an address</span></div>
+                        <div class="flex justify-between"><span id="checkoutDeliveryLabel" class="text-stone-600">Delivery</span><span id="checkoutDeliveryFee">Select an address</span></div>
                         <div class="flex justify-between border-t border-[#E8E2D8] pt-1 font-semibold"><span id="checkoutTotalLabel">Total</span><span id="checkoutTotalAmount" class="text-[#C5A059]">Select an address</span></div>
                     </div>
                 </div>
@@ -1104,7 +1104,28 @@
                         <!-- Populated by handlePaymentMethodChange() -->
                     </div>
 
-                    <div>
+                    <fieldset>
+                        <legend class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Fulfillment Method</legend>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2 p-3 border border-[#E8E2D8] rounded-xs text-xs cursor-pointer">
+                                <input type="radio" name="fulfillmentMethod" value="delivery" checked onchange="setFulfillmentMethod('delivery')">
+                                <span>Delivery</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 border border-[#E8E2D8] rounded-xs text-xs cursor-pointer">
+                                <input type="radio" name="fulfillmentMethod" value="pickup" onchange="setFulfillmentMethod('pickup')">
+                                <span>Free pickup</span>
+                            </label>
+                        </div>
+                        <div id="pickupLocationInfo" class="hidden mt-2 p-3 bg-[#FAF8F5] border border-[#E8E2D8] rounded-xs text-xs text-stone-700">
+                            <strong>Pickup at Drift &amp; Co. Office</strong>
+                            <p class="mt-1">Bulilan Norte, Pila, Laguna. No delivery fee.</p>
+                            <div id="pickupLocationMap" class="w-full h-48 mt-2 border border-[#E8E2D8] rounded-xs bg-stone-100" aria-label="Map showing the Drift &amp; Co. office pickup location"></div>
+                            <a href="https://www.google.com/maps/search/?api=1&amp;query=14.2376712%2C121.3644522" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 text-[10px] text-[#9E7D3B] underline">Open pickup location in Google Maps</a>
+                            <p id="pickupLocationMapStatus" class="text-[10px] text-stone-400 mt-1">Map data © OpenStreetMap contributors.</p>
+                        </div>
+                    </fieldset>
+
+                    <div id="deliveryAddressFields">
                         <label class="block text-[11px] uppercase tracking-wider text-stone-700 font-semibold mb-1">Delivery Address <span class="text-red-500">*</span></label>
                         <div class="flex gap-2">
                             <input type="search" id="deliveryAddressSearch" maxlength="160" placeholder="Search street, barangay, city, or postal code" class="min-w-0 flex-1 px-3 py-2 text-xs bg-white border border-[#E8E2D8] rounded-xs focus:outline-none focus:border-[#C5A059]">
@@ -1164,7 +1185,7 @@
                         <span id="successCustomerPhone" class="font-mono text-stone-700">-</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-stone-500">Delivery Address:</span>
+                        <span id="successAddressLabel" class="text-stone-500">Delivery Address:</span>
                         <span id="successAddress" class="text-right text-stone-700 max-w-[200px] truncate">-</span>
                     </div>
                     <div id="successSubtotalRow" class="hidden flex justify-between">
@@ -1172,7 +1193,7 @@
                         <span id="successSubtotal" class="text-stone-700">-</span>
                     </div>
                     <div id="successDeliveryFeeRow" class="hidden flex justify-between">
-                        <span class="text-stone-500">Delivery:</span>
+                        <span id="successDeliveryFeeLabel" class="text-stone-500">Delivery:</span>
                         <span id="successDeliveryFee" class="text-stone-700">-</span>
                     </div>
                     <div class="flex justify-between">

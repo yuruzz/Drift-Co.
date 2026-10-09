@@ -14,7 +14,7 @@ process.env.DELIVERY_QUOTE_SECRET = 'delivery-quote-unit-test-secret-with-more-t
 
 const { default: settingsHandler } = await import('../api/notifications/settings.js');
 const { normalizeNtfyTopic } = await import('../lib/notifications.js');
-const { calculateJntDeliveryFee, classifyJntZone, verifyDeliveryQuote } = await import('../lib/delivery.js');
+const { calculateJntDeliveryFee, classifyJntZone, getPickupDetails, PICKUP_LOCATION, verifyDeliveryQuote } = await import('../lib/delivery.js');
 const { default: ordersHandler } = await import('../api/orders.js');
 const { default: deliverySearchHandler } = await import('../api/delivery-search.js');
 const { default: deliveryQuoteHandler } = await import('../api/delivery-quote.js');
@@ -245,6 +245,22 @@ test('J&T fees use destination zone, packed weight tiers, and the bottle-only fr
   assert.equal(classifyJntZone({ state: 'Laguna', region: 'CALABARZON' }), 'Luzon');
 });
 
+test('pickup details have no delivery fee and use the Pila office location', () => {
+  assert.deepEqual(getPickupDetails([
+    { name: 'Test Fragrance', price: 450, qty: 2, volume: '50ml' },
+  ]), {
+    address: `Pickup at ${PICKUP_LOCATION}`,
+    distanceKm: 0,
+    deliveryFee: 0,
+    shippingWeightGrams: 1000,
+    bottleSubtotal: 900,
+    zone: null,
+    origin: PICKUP_LOCATION,
+    shippingConfirmationRequired: false,
+    shippingConfirmationReasons: [],
+  });
+});
+
 test('delivery address search is user-triggered and limited to Philippine results', async () => {
   const response = responseRecorder();
   await deliverySearchHandler({ method: 'GET', query: { q: 'Pila Laguna' } }, response);
@@ -389,6 +405,7 @@ test('orders are stored, use saved notification settings, and appear in Studio s
   assert.deepEqual(Object.keys(trackingResponse.body.order).sort(), [
     'createdAt',
     'deliveryFee',
+    'fulfillmentMethod',
     'id',
     'shippingConfirmationReasons',
     'shippingConfirmationRequired',
@@ -522,6 +539,53 @@ test('QR Ph orders get a unique PayMongo QR when the disabled feature is explici
   }, deniedStatus);
   assert.equal(deniedStatus.statusCode, 409);
 
+});
+
+test('pickup orders need no delivery quote, ignore client address details, and track as pickup', async () => {
+  const items = [{ name: 'Test Fragrance', price: 450, qty: 1, volume: '50ml' }];
+  const orderResponse = responseRecorder();
+  await ordersHandler({
+    method: 'POST',
+    body: {
+      customerName: 'Pickup Customer',
+      phone: '09170000003',
+      fulfillmentMethod: 'pickup',
+      address: 'Untrusted client address',
+      addressDetails: 'Untrusted address details',
+      items,
+      total: 1,
+    },
+  }, orderResponse);
+
+  assert.equal(orderResponse.statusCode, 201);
+  assert.equal(orderResponse.body.order.fulfillmentMethod, 'pickup');
+  assert.equal(orderResponse.body.order.address, `Pickup at ${PICKUP_LOCATION}`);
+  assert.equal(orderResponse.body.order.shippingOrigin, PICKUP_LOCATION);
+  assert.equal(orderResponse.body.order.deliveryFee, 0);
+  assert.equal(orderResponse.body.order.shippingConfirmationRequired, false);
+  assert.equal(orderResponse.body.order.total, 450);
+
+  const trackingResponse = responseRecorder();
+  await orderTrackingHandler({
+    method: 'GET',
+    query: { query: orderResponse.body.order.id },
+  }, trackingResponse);
+  assert.equal(trackingResponse.body.order.fulfillmentMethod, 'pickup');
+  assert.match(trackingResponse.body.tracking.trackingNumber, /^PICKUP-/);
+  assert.equal(trackingResponse.body.tracking.courier, 'Drift & Co. Office Pickup');
+  assert.equal(trackingResponse.body.tracking.timeline[2].title, 'Ready for Pickup');
+
+  const invalidResponse = responseRecorder();
+  await ordersHandler({
+    method: 'POST',
+    body: {
+      customerName: 'Pickup Customer',
+      phone: '09170000003',
+      fulfillmentMethod: 'unknown',
+      items,
+    },
+  }, invalidResponse);
+  assert.equal(invalidResponse.statusCode, 400);
 });
 
 test('PayMongo signature verification rejects invalid signatures', async () => {

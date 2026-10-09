@@ -9,10 +9,13 @@ let deliveryMap = null;
 let deliveryMapMarker = null;
 let pendingMapLocation = null;
 let deliveryMapReady = false;
+let pickupMap = null;
+let pickupMapReady = false;
 let quoteRequestId = 0;
 let addressSearchRequestId = 0;
 window.deliveryPricing = null;
 const PILA_TOWN_CENTER = [14.2376712, 121.3644522];
+let selectedFulfillmentMethod = 'delivery';
 
 function getCheckoutSubtotal() {
     return (window.cart || []).reduce((sum, item) => sum + (Number(item.price) * Number(item.qty)), 0);
@@ -43,11 +46,21 @@ function updateCheckoutTotals() {
     if (countEl) countEl.innerText = `${totalQty} item${totalQty === 1 ? '' : 's'} in bag`;
     if (subtotalEl) subtotalEl.innerText = `₱${subtotal.toFixed(2)}`;
 
+    const totalLabel = document.getElementById('checkoutTotalLabel');
+    const fulfillmentLabel = document.getElementById('checkoutDeliveryLabel');
+    if (selectedFulfillmentMethod === 'pickup') {
+        if (fulfillmentLabel) fulfillmentLabel.innerText = 'Pickup';
+        if (deliveryEl) deliveryEl.innerText = 'Free';
+        if (totalEl) totalEl.innerText = `₱${subtotal.toFixed(2)}`;
+        if (totalLabel) totalLabel.innerText = 'Total';
+        return;
+    }
+    if (fulfillmentLabel) fulfillmentLabel.innerText = 'Delivery';
+
     const quote = window.deliveryQuote;
     if (!quote) {
         if (deliveryEl) deliveryEl.innerText = 'Select an address';
         if (totalEl) totalEl.innerText = 'Select an address';
-        const totalLabel = document.getElementById('checkoutTotalLabel');
         if (totalLabel) totalLabel.innerText = 'Total';
         return;
     }
@@ -80,8 +93,20 @@ function updateCheckoutTotals() {
         const provisionalTotal = subtotal + (deliveryFee || 0);
         totalEl.innerText = `₱${provisionalTotal.toFixed(2)}${manualConfirmation ? ' + shipping TBD' : ''}`;
     }
-    const totalLabel = document.getElementById('checkoutTotalLabel');
     if (totalLabel) totalLabel.innerText = manualConfirmation ? 'Provisional total' : 'Total';
+}
+
+function setFulfillmentMethod(method) {
+    if (method !== 'delivery' && method !== 'pickup') return;
+    selectedFulfillmentMethod = method;
+    const isPickup = method === 'pickup';
+    document.getElementById('deliveryAddressFields')?.classList.toggle('hidden', isPickup);
+    document.getElementById('pickupLocationInfo')?.classList.toggle('hidden', !isPickup);
+    const addressLabel = document.getElementById('successAddressLabel');
+    if (addressLabel) addressLabel.innerText = isPickup ? 'Pickup Location:' : 'Delivery Address:';
+    updateCheckoutTotals();
+    if (isPickup) initializePickupMap();
+    else initializeDeliveryMap();
 }
 
 function setDeliveryAddressStatus(message, isError = false) {
@@ -133,6 +158,32 @@ function initializeDeliveryMap() {
     });
     deliveryMapReady = true;
     setTimeout(() => deliveryMap.invalidateSize(), 100);
+}
+
+function initializePickupMap() {
+    const mapElement = document.getElementById('pickupLocationMap');
+    if (!mapElement) return;
+    if (pickupMapReady) {
+        requestAnimationFrame(() => pickupMap.invalidateSize());
+        return;
+    }
+    if (!window.L) {
+        document.getElementById('pickupLocationMapStatus').innerText =
+            'The map could not be loaded. Use the Google Maps link above for directions.';
+        return;
+    }
+
+    pickupMap = L.map(mapElement).setView(PILA_TOWN_CENTER, 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+    }).addTo(pickupMap);
+    L.marker(PILA_TOWN_CENTER)
+        .addTo(pickupMap)
+        .bindPopup('Drift & Co. Office<br>Bulilan Norte, Pila, Laguna')
+        .openPopup();
+    pickupMapReady = true;
+    setTimeout(() => pickupMap.invalidateSize(), 100);
 }
 
 async function searchDeliveryAddress() {
@@ -244,7 +295,7 @@ async function selectDeliveryLocation(latitude, longitude) {
             if (successView) successView.classList.add('hidden');
 
             updateCheckoutTotals();
-            initializeDeliveryMap();
+            if (selectedFulfillmentMethod === 'delivery') initializeDeliveryMap();
 
             if (typeof syncPaymentMethodDropdown === 'function') syncPaymentMethodDropdown();
             handlePaymentMethodChange();
@@ -278,7 +329,8 @@ async function selectDeliveryLocation(latitude, longitude) {
                 showToast('Your shopping bag is empty. Please add a fragrance first.');
                 return;
             }
-            if (!window.deliveryQuote || !window.selectedDeliveryQuoteToken) {
+            if (selectedFulfillmentMethod === 'delivery'
+                && (!window.deliveryQuote || !window.selectedDeliveryQuoteToken)) {
                 showToast('Search for an address or select a map location and wait for the delivery quote.');
                 return;
             }
@@ -302,11 +354,14 @@ async function selectDeliveryLocation(latitude, longitude) {
             const payload = {
                 customerName,
                 phone,
+                fulfillmentMethod: selectedFulfillmentMethod,
                 paymentMethod,
                 paymentReference,
                 address,
                 addressDetails,
-                deliveryQuoteToken: window.selectedDeliveryQuoteToken,
+                deliveryQuoteToken: selectedFulfillmentMethod === 'delivery'
+                    ? window.selectedDeliveryQuoteToken
+                    : '',
                 notes,
                 items: bag,
                 total
@@ -443,6 +498,9 @@ async function selectDeliveryLocation(latitude, longitude) {
             document.getElementById('successOrderId').innerText = order.id;
             document.getElementById('successCustomerName').innerText = order.customerName;
             document.getElementById('successCustomerPhone').innerText = order.phone;
+            const isPickup = order.fulfillmentMethod === 'pickup';
+            document.getElementById('successAddressLabel').innerText = isPickup ? 'Pickup Location:' : 'Delivery Address:';
+            document.getElementById('successDeliveryFeeLabel').innerText = isPickup ? 'Pickup:' : 'Delivery:';
             document.getElementById('successAddress').innerText = order.address || 'Address provided';
             document.getElementById('successTotal').innerText = `₱${Number(order.total || 0).toFixed(2)}${order.shippingConfirmationRequired ? ' (provisional)' : ''}`;
             const subtotalRow = document.getElementById('successSubtotalRow');
@@ -456,7 +514,7 @@ async function selectDeliveryLocation(latitude, longitude) {
             if (order.deliveryFee !== null && Number.isFinite(Number(order.deliveryFee)) && deliveryFeeRow) {
                 deliveryFeeRow.classList.remove('hidden');
                 document.getElementById('successDeliveryFee').innerText = Number(order.deliveryFee) === 0
-                    ? (order.shippingConfirmationRequired ? 'Free for bottles; remaining shipping to confirm' : 'Free')
+                    ? (isPickup ? 'Free pickup' : order.shippingConfirmationRequired ? 'Free for bottles; remaining shipping to confirm' : 'Free')
                     : `₱${Number(order.deliveryFee).toFixed(2)}${order.shippingConfirmationRequired ? ' for bottles; remaining shipping to confirm' : ` (${order.shippingZone || 'J&T'})`}`;
             } else if (order.shippingConfirmationRequired && deliveryFeeRow) {
                 deliveryFeeRow.classList.remove('hidden');
@@ -476,6 +534,8 @@ async function selectDeliveryLocation(latitude, longitude) {
             if (successTitle) successTitle.innerText = isQrPhPayment ? 'Scan to Pay' : 'Order Confirmed!';
             if (successSubtitle) successSubtitle.innerText = isQrPhPayment
                 ? 'Your order is reserved until PayMongo confirms your payment.'
+                : isPickup
+                    ? 'We will contact you when your order is ready for pickup at our Pila office.'
                 : order.shippingConfirmationRequired
                     ? 'Your order is received. Drift & Co. will confirm the final shipping charge before dispatch.'
                     : 'Notification & order receipt dispatched';
@@ -595,7 +655,7 @@ async function selectDeliveryLocation(latitude, longitude) {
                 `Order ID: ${order.id}\n` +
                 `Customer: ${order.customerName}\n` +
                 `Phone: ${order.phone}\n` +
-                `Delivery Address: ${order.address || 'Not specified'}\n` +
+                `${order.fulfillmentMethod === 'pickup' ? 'Pickup Location' : 'Delivery Address'}: ${order.address || 'Not specified'}\n` +
                 `Payment: ${order.paymentMethod}\n` +
                 (order.paymentReference ? `Payment Ref: ${order.paymentReference}\n` : '') +
                 bankNote +
@@ -603,7 +663,7 @@ async function selectDeliveryLocation(latitude, longitude) {
                 `\nBottles:\n${itemsList}\n\n` +
                 `Total Payable: ₱${order.total.toFixed(2)}\n` +
                 `Status: ${order.status}\n\n` +
-                `Thank you for choosing Drift & Co. Luxury Fragrances. Our concierge will contact you for dispatch.`;
+                `Thank you for choosing Drift & Co. Luxury Fragrances. ${order.fulfillmentMethod === 'pickup' ? 'We will contact you when your order is ready for pickup.' : 'Our concierge will contact you for dispatch.'}`;
         }
 
         function sendSuccessViaSMS() {

@@ -9,6 +9,7 @@ import { requireStudioAccess } from './lib/studio-auth.js';
 import { createQrPhPayment, getVerifiedQrPhPayment, paymongoQrPhReady, verifyPaymongoWebhook } from './lib/paymongo.js';
 import {
   getDeliveryQuote,
+  getPickupDetails,
   searchDeliveryAddresses,
   verifyDeliveryQuote,
 } from './lib/delivery.js';
@@ -39,6 +40,7 @@ interface Order {
   id: string;
   customerName: string;
   phone: string;
+  fulfillmentMethod?: 'delivery' | 'pickup';
   address: string;
   paymentMethod: string;
   paymentReference?: string;
@@ -327,13 +329,16 @@ async function startServer() {
     const amountSummary = order.shippingConfirmationRequired
       ? `Items subtotal: ₱${order.subtotal.toFixed(2)}; shipping to be confirmed`
       : `Total amount: ₱${order.total.toFixed(2)}`;
+    const isPickup = order.fulfillmentMethod === 'pickup';
+    const fulfillmentLabel = isPickup ? 'Pickup location' : 'Delivery address';
     
     // Detailed message for store owner / concierge
     const ownerSummary = `🛍️ *DRIFT & CO. — NEW CUSTOMER ORDER!*\n\n` +
       `*Order ID:* \`${order.id}\`\n` +
       `*Customer:* ${order.customerName}\n` +
       `*Phone:* ${order.phone}\n` +
-      `*Address:* ${order.address || 'N/A'}\n` +
+      `*${fulfillmentLabel}:* ${order.address || 'N/A'}\n` +
+      `*Fulfillment:* ${isPickup ? 'Pickup (no delivery fee)' : 'Delivery'}\n` +
       `*Payment:* ${order.paymentMethod}${order.paymentReference ? ` (Ref: \`${order.paymentReference}\`)` : ''}\n` +
       (order.notes ? `*Notes:* ${order.notes}\n` : '') +
       `\n*Items Ordered:*\n${itemsText}\n\n` +
@@ -344,7 +349,9 @@ async function startServer() {
       `*Time:* ${new Date(order.createdAt).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}`;
 
     // Concise, friendly SMS/text for customer
-    const customerSms = order.shippingConfirmationRequired
+    const customerSms = isPickup
+      ? `Drift & Co.: Hello ${order.customerName}! Your order #${order.id} for ₱${order.total.toFixed(2)} (${order.paymentMethod}) has been received. We will contact you when it is ready for pickup at our office in Bulilan Norte, Pila, Laguna.`
+      : order.shippingConfirmationRequired
       ? `Drift & Co.: Hello ${order.customerName}! Your order #${order.id} has been received. Items subtotal: ₱${order.subtotal.toFixed(2)}; shipping is to be confirmed by our concierge before dispatch. Delivery to: ${order.address}.`
       : `Drift & Co.: Hello ${order.customerName}! Your order #${order.id} for ₱${order.total.toFixed(2)} (${order.paymentMethod}) has been received! Our concierge will contact you shortly regarding delivery to: ${order.address}.`;
 
@@ -378,7 +385,7 @@ async function startServer() {
         let bodyPayload: any;
         if (isDiscord) {
           bodyPayload = {
-            content: `🚨 **New Drift & Co. Perfume Order!**\n**Order #:** \`${order.id}\`\n**Customer:** **${order.customerName}** (📞 \`${order.phone}\`)\n**${amountSummary}** via *${order.paymentMethod}*\n${order.shippingConfirmationRequired ? `**Shipping:** ${order.shippingConfirmationReasons?.join(' ')}\n` : ''}**Dispatch office:** ${order.shippingOrigin || 'To be assigned'}\n**Address:** ${order.address}\n**Items Ordered:**\n${order.items.map(it => `> • **${it.qty}x ${it.name}** (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}`).join('\n')}`
+            content: `🚨 **New Drift & Co. Perfume Order!**\n**Order #:** \`${order.id}\`\n**Customer:** **${order.customerName}** (📞 \`${order.phone}\`)\n**${amountSummary}** via *${order.paymentMethod}*\n**Fulfillment:** ${isPickup ? 'Pickup (no delivery fee)' : 'Delivery'}\n${order.shippingConfirmationRequired ? `**Shipping:** ${order.shippingConfirmationReasons?.join(' ')}\n` : ''}**${fulfillmentLabel}:** ${order.address}\n**Items Ordered:**\n${order.items.map(it => `> • **${it.qty}x ${it.name}** (${it.volume || '50ml'}) — ₱${(it.price * it.qty).toFixed(2)}`).join('\n')}`
           };
         } else {
           bodyPayload = { event: 'order.created', order, textSummary: ownerSummary, customerSms };
@@ -617,6 +624,7 @@ async function startServer() {
         phone,
         addressDetails,
         deliveryQuoteToken,
+        fulfillmentMethod: requestedFulfillmentMethod,
         paymentMethod,
         paymentReference,
         notes,
@@ -632,21 +640,31 @@ async function startServer() {
         res.status(400).json({ success: false, error: 'Customer name and phone number are required.' });
         return;
       }
+      const fulfillmentMethod = requestedFulfillmentMethod || 'delivery';
+      if (fulfillmentMethod !== 'delivery' && fulfillmentMethod !== 'pickup') {
+        res.status(400).json({ success: false, error: 'Choose delivery or pickup.' });
+        return;
+      }
 
       const orderId = `DRFT-${randomUUID().toUpperCase()}`;
       const isQrPhPayment = paymentMethod === 'QR Ph';
       const subtotal = isQrPhPayment ? calculateQrPhTotal(items) : calculateOrderSubtotal(items);
-      const delivery = verifyDeliveryQuote(deliveryQuoteToken, items);
+      const delivery = fulfillmentMethod === 'pickup'
+        ? getPickupDetails(items)
+        : verifyDeliveryQuote(deliveryQuoteToken, items);
       if (isQrPhPayment && delivery.shippingConfirmationRequired) {
         throw Object.assign(new Error('QR Ph is unavailable until shipping charges are confirmed. Please choose Cash on Delivery or contact the store.'), { statusCode: 400 });
       }
-      const cleanAddressDetails = String(addressDetails || '').trim().slice(0, 200);
+      const cleanAddressDetails = fulfillmentMethod === 'delivery'
+        ? String(addressDetails || '').trim().slice(0, 200)
+        : '';
       const calculatedTotal = subtotal + (delivery.deliveryFee || 0);
 
       const newOrder: Order = {
         id: orderId,
         customerName: String(customerName).trim(),
         phone: String(phone).trim(),
+        fulfillmentMethod,
         address: [delivery.address, cleanAddressDetails].filter(Boolean).join(', '),
         paymentMethod: String(paymentMethod || 'Cash on Delivery (COD)').trim(),
         paymentReference: paymentReference ? String(paymentReference).trim() : undefined,
@@ -732,6 +750,8 @@ async function startServer() {
     const estDeliveryMin = new Date(createdDate.getTime() + 1000 * 60 * 60 * 24 * 2);
     const estDeliveryMax = new Date(createdDate.getTime() + 1000 * 60 * 60 * 24 * 4);
     const estDeliveryStr = `${estDeliveryMin.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} – ${estDeliveryMax.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const isPickup = order.fulfillmentMethod === 'pickup';
+    const arrivalEstimate = isPickup ? 'We will contact you when your order is ready for pickup.' : estDeliveryStr;
 
     const statusOrderMap: Record<Order['status'], number> = {
       Pending: 1,
@@ -760,27 +780,32 @@ async function startServer() {
       },
       {
         step: 3,
-        title: 'Dispatched & Handed to Courier',
-        description: 'Protected with luxury shock-absorbent cushioning and handed over to courier dispatch.',
+        title: isPickup ? 'Ready for Pickup' : 'Dispatched & Handed to Courier',
+        description: isPickup
+          ? 'We will contact you when your order is ready for collection at the office.'
+          : 'Protected with luxury shock-absorbent cushioning and handed over to courier dispatch.',
         status: currentStep >= 3 ? 'completed' : currentStep === 2 ? 'in_progress' : 'upcoming',
         timestamp: currentStep >= 3 ? formatDate(step3Date) : 'Awaiting courier handover',
-        location: 'J&T Express / Drift Priority Courier Hub',
+        location: isPickup ? order.shippingOrigin : 'J&T Express / Drift Priority Courier Hub',
       },
       {
         step: 4,
-        title: 'Out for Delivery / Delivered',
-        description: currentStep === 4 ? 'Package successfully received by customer.' : 'Courier will notify via SMS or call prior to arrival.',
+        title: isPickup ? 'Picked Up / Completed' : 'Out for Delivery / Delivered',
+        description: currentStep === 4
+          ? (isPickup ? 'Order successfully collected by customer.' : 'Package successfully received by customer.')
+          : (isPickup ? 'Collect your order from the Drift & Co. Office.' : 'Courier will notify via SMS or call prior to arrival.'),
         status: currentStep === 4 ? 'completed' : currentStep === 3 ? 'in_progress' : 'upcoming',
-        timestamp: currentStep === 4 ? formatDate(step4Date) : estDeliveryStr,
-        location: 'Delivery destination',
+        timestamp: currentStep === 4 ? formatDate(step4Date) : arrivalEstimate,
+        location: isPickup ? order.shippingOrigin : 'Delivery destination',
       },
     ];
 
     const digitsOnly = order.id.replace(/\D/g, '') || '882194';
-    const trackingNumber = `PH-JT-${digitsOnly}EXP`;
+    const trackingNumber = isPickup ? `PICKUP-${digitsOnly}` : `PH-JT-${digitsOnly}EXP`;
     const trackingOrder = {
       id: order.id,
       status: order.status,
+      fulfillmentMethod: isPickup ? 'pickup' : 'delivery',
       createdAt: order.createdAt,
       total: order.total,
       shippingConfirmationRequired: Boolean(order.shippingConfirmationRequired),
@@ -796,8 +821,8 @@ async function startServer() {
       order: trackingOrder,
       tracking: {
         trackingNumber,
-        courier: 'J&T Express PH / Drift Priority Courier',
-        estimatedDelivery: estDeliveryStr,
+        courier: isPickup ? 'Drift & Co. Office Pickup' : 'J&T Express PH / Drift Priority Courier',
+        estimatedDelivery: arrivalEstimate,
         currentStep,
         statusLabel: order.status,
         timeline,

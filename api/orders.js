@@ -3,7 +3,7 @@ import { defaultSettings, dispatchOrderNotifications } from '../lib/notification
 import { getHash, redisCommand, saveRecord } from '../lib/redis.js';
 import { requireStudioAccess } from '../lib/studio-auth.js';
 import { createQrPhPayment } from '../lib/paymongo.js';
-import { verifyDeliveryQuote } from '../lib/delivery.js';
+import { getPickupDetails, verifyDeliveryQuote } from '../lib/delivery.js';
 import { calculateOrderPricing } from '../lib/order-pricing.js';
 
 const ORDERS_KEY = 'drift:orders';
@@ -59,6 +59,7 @@ export default async function handler(req, res) {
       phone,
       addressDetails,
       deliveryQuoteToken,
+      fulfillmentMethod: requestedFulfillmentMethod,
       paymentMethod,
       paymentReference,
       notes,
@@ -70,24 +71,33 @@ export default async function handler(req, res) {
     if (!customerName || !phone) {
       return res.status(400).json({ success: false, error: 'Customer name and phone number are required.' });
     }
+    const fulfillmentMethod = requestedFulfillmentMethod || 'delivery';
+    if (!['delivery', 'pickup'].includes(fulfillmentMethod)) {
+      return res.status(400).json({ success: false, error: 'Choose delivery or pickup.' });
+    }
 
     const savedSettings = await redisCommand('GET', 'drift:notification-settings');
     const settings = savedSettings ? { ...defaultSettings, ...JSON.parse(savedSettings) } : { ...defaultSettings };
     const isQrPhPayment = paymentMethod === 'QR Ph';
     const pricing = calculateOrderPricing(items);
     const subtotal = isQrPhPayment ? calculateQrPhTotal(items) : pricing.subtotal;
-    const delivery = verifyDeliveryQuote(deliveryQuoteToken, items);
+    const delivery = fulfillmentMethod === 'pickup'
+      ? getPickupDetails(items)
+      : verifyDeliveryQuote(deliveryQuoteToken, items);
     if (isQrPhPayment && delivery.shippingConfirmationRequired) {
       const error = new Error('QR Ph is unavailable until shipping charges are confirmed. Please choose Cash on Delivery or contact the store.');
       error.statusCode = 400;
       throw error;
     }
-    const cleanAddressDetails = String(addressDetails || '').trim().slice(0, 200);
+    const cleanAddressDetails = fulfillmentMethod === 'delivery'
+      ? String(addressDetails || '').trim().slice(0, 200)
+      : '';
     const orderTotal = subtotal + (delivery.deliveryFee || 0);
     const order = {
       id: `DRFT-${randomUUID().toUpperCase()}`,
       customerName: String(customerName).trim(),
       phone: String(phone).trim(),
+      fulfillmentMethod,
       address: [delivery.address, cleanAddressDetails].filter(Boolean).join(', '),
       subtotal,
       deliveryFee: delivery.deliveryFee,
