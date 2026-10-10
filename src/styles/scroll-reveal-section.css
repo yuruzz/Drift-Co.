@@ -1,0 +1,99 @@
+/* Brand styling for the ScrollReveal manifesto band (Drift & Co. palette). */
+
+.drift-manifesto {
+  position: relative;
+  overflow: hidden;
+  padding: 5.5rem 1rem;
+  background-color: #1a1817;
+  border-top: 1px solid #e8e2d8;
+  border-bottom: 1px solid #e8e2d8;
+}
+
+.drift-manifesto::before {
+  content: "";
+  position: absolute;
+  top: -12rem;
+  right: -10rem;
+  width: 30rem;
+  height: 30rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(197, 160, 89, 0.16) 0%, rgba(197, 160, 89, 0) 68%);
+  pointer-events: none;
+}
+
+.drift-manifesto-inner {
+  position: relative;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+}
+
+.drift-manifesto-eyebrow {
+  display: block;
+  font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #c5a059;
+  margin-bottom: 0.5rem;
+}
+
+.drift-manifesto-rule {
+  display: block;
+  width: 4rem;
+  height: 2px;
+  margin-bottom: 1.5rem;
+  background-color: #c5a059;
+}
+
+.drift-manifesto .scroll-reveal {
+  margin: 0;
+}
+
+.drift-manifesto .scroll-reveal-text.drift-manifesto-text {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.5rem, 3.6vw, 2.75rem);
+  font-weight: 300;
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+  color: #faf8f5;
+  text-wrap: balance;
+}
+
+.drift-manifesto .drift-manifesto-text .word {
+  color: #faf8f5;
+}
+
+.drift-manifesto-caption {
+  display: block;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(250, 248, 245, 0.15);
+  font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #9e7d3b;
+}
+
+@media (max-width: 640px) {
+  .drift-manifesto {
+    padding: 3.5rem 1rem;
+  }
+
+  .drift-manifesto .scroll-reveal-text.drift-manifesto-text {
+    font-size: 1.4rem;
+    line-height: 1.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drift-manifesto .scroll-reveal,
+  .drift-manifesto .word {
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
