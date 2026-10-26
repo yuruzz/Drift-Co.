@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://drift-co.vercel.app/sitemap.xml
