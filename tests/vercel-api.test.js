@@ -345,8 +345,8 @@ test('weight tiers, Starter Kit handling, and nearest dispatch office are verifi
 
 test('Messenger share page uses its own canonical URL and the public preview image', async () => {
   const html = await readFile(new URL('../public/share-v2/index.html', import.meta.url), 'utf8');
-  assert.match(html, /property="og:url" content="https:\/\/driftco-website\.vercel\.app\/share-v2\/"/);
-  assert.match(html, /property="og:image" content="https:\/\/driftco-website\.vercel\.app\/share-preview\.jpg"/);
+  assert.match(html, /property="og:url" content="https:\/\/shop-driftco\.vercel\.app\/share-v2\/"/);
+  assert.match(html, /property="og:image" content="https:\/\/shop-driftco\.vercel\.app\/share-preview\.jpg"/);
   assert.match(html, /property="og:image:width" content="1200"/);
   assert.match(html, /property="og:image:height" content="630"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
