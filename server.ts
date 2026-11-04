@@ -121,7 +121,7 @@ interface PaymentSettings {
 
 function calculateQrPhTotal(items: OrderItem[]): number {
   return items.reduce((sum, item) => {
-    const price = item.volume === '40ml' ? 380 : item.volume === '50ml' ? 450 : 0;
+    const price = item.volume === '40ml' ? 380 : item.volume === '50ml' ? 550 : 0;
     const quantity = Number(item.qty);
     if (!price || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) {
       throw Object.assign(new Error('The bag contains an invalid item or quantity.'), { statusCode: 400 });
@@ -994,16 +994,16 @@ async function startServer() {
       items: [
         {
           name: 'Baccarat Rouge (Tester Verification)',
-          price: 450,
+          price: 550,
           image: '',
           volume: '50ml',
           qty: 1,
         }
       ],
-      subtotal: 450,
+      subtotal: 550,
       deliveryFee: 0,
       deliveryDistanceKm: 0,
-      total: 450,
+      total: 550,
       status: 'Pending',
       createdAt: new Date().toISOString(),
     };
@@ -1209,9 +1209,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(process.cwd(), 'dist')));
+    const distPath = path.resolve(process.cwd(), 'dist');
+    app.use(express.static(distPath));
     app.get('*', (_req: Request, res: Response) => {
-      res.sendFile(path.resolve(process.cwd(), 'dist', 'index.html'));
+      res.status(404).sendFile(path.join(distPath, '404.html'));
     });
   }
 

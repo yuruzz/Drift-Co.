@@ -64,7 +64,7 @@ function removeCartItem(index) {
 }
 
 function orderPartnerPackage() {
-    addToCart("Drift & Co. Business Partner Kit (1x 50ml EDP + 10x Testers + Catalog)", 988, "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800", "Starter Kit");
+    addToCart("Drift & Co. Business Partner Kit (1x 40ml EDP + 10x Testers + Catalog)", 988, "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800", "Starter Kit");
 }
 
 function updateCartUI() {

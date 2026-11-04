@@ -175,7 +175,7 @@ function responseRecorder() {
   };
 }
 
-async function createDeliveryQuote(items = [{ name: 'Test Fragrance', price: 450, qty: 1, volume: '50ml' }]) {
+async function createDeliveryQuote(items = [{ name: 'Test Fragrance', price: 550, qty: 1, volume: '50ml' }]) {
   const response = responseRecorder();
   await deliveryQuoteHandler({
     method: 'POST',
@@ -247,13 +247,13 @@ test('J&T fees use destination zone, packed weight tiers, and the bottle-only fr
 
 test('pickup details have no delivery fee and use the Pila office location', () => {
   assert.deepEqual(getPickupDetails([
-    { name: 'Test Fragrance', price: 450, qty: 2, volume: '50ml' },
+    { name: 'Test Fragrance', price: 550, qty: 2, volume: '50ml' },
   ]), {
     address: `Pickup at ${PICKUP_LOCATION}`,
     distanceKm: 0,
     deliveryFee: 0,
     shippingWeightGrams: 1000,
-    bottleSubtotal: 900,
+    bottleSubtotal: 1100,
     zone: null,
     origin: PICKUP_LOCATION,
     shippingConfirmationRequired: false,
@@ -274,7 +274,7 @@ test('delivery address search is user-triggered and limited to Philippine result
 
 test('delivery quotes use OSM destination zones, J&T rates, and nearest-office OSRM distance', async () => {
   const response = responseRecorder();
-  const items = [{ name: 'Test Fragrance', price: 450, qty: 1, volume: '50ml' }];
+  const items = [{ name: 'Test Fragrance', price: 550, qty: 1, volume: '50ml' }];
   await deliveryQuoteHandler({
     method: 'POST',
     body: { latitude: 14.23, longitude: 121.36, items },
@@ -294,7 +294,7 @@ test('delivery quotes use OSM destination zones, J&T rates, and nearest-office O
     distanceKm: 5,
     deliveryFee: 85,
     shippingWeightGrams: 500,
-    bottleSubtotal: 450,
+    bottleSubtotal: 550,
     zone: 'Luzon',
     origin: 'Bulilan Norte, Pila, Laguna',
     shippingConfirmationRequired: false,
@@ -306,20 +306,20 @@ test('delivery quotes use OSM destination zones, J&T rates, and nearest-office O
 
 test('weight tiers, Starter Kit handling, and nearest dispatch office are verified on quotes', async () => {
   const overSixKg = await createDeliveryQuote([
-    { name: '50ml fragrance', volume: '50ml', price: 450, qty: 13 },
+    { name: '50ml fragrance', volume: '50ml', price: 550, qty: 13 },
   ]);
   assert.equal(overSixKg.shippingWeightGrams, 6500);
   assert.equal(overSixKg.deliveryFee, 0);
   assert.equal(overSixKg.shippingConfirmationReasons.some(reason => reason.includes('over 6 kg')), true);
   assert.equal(verifyDeliveryQuote(overSixKg.deliveryToken, [
-    { name: '50ml fragrance', volume: '50ml', price: 450, qty: 13 },
+    { name: '50ml fragrance', volume: '50ml', price: 550, qty: 13 },
   ]).shippingConfirmationRequired, true);
 
   const kitAndBottles = await createDeliveryQuote([
-    { name: '50ml fragrance', volume: '50ml', price: 450, qty: 4 },
+    { name: '50ml fragrance', volume: '50ml', price: 550, qty: 4 },
     { name: 'Starter Kit', volume: 'Starter Kit', price: 988, qty: 1 },
   ]);
-  assert.equal(kitAndBottles.bottleSubtotal, 1800);
+  assert.equal(kitAndBottles.bottleSubtotal, 2200);
   assert.equal(kitAndBottles.shippingWeightGrams, 2000);
   assert.equal(kitAndBottles.deliveryFee, 0);
   assert.equal(kitAndBottles.shippingConfirmationReasons.some(reason => reason.includes('Starter Kit')), true);
@@ -343,10 +343,15 @@ test('weight tiers, Starter Kit handling, and nearest dispatch office are verifi
   }
 });
 
-test('Messenger share page uses its own canonical URL and the public preview image', async () => {
+test('site share pages use a versioned public preview image', async () => {
+  const homeHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const html = await readFile(new URL('../public/share-v2/index.html', import.meta.url), 'utf8');
+  assert.match(homeHtml, /<body class="[^"]*\bpublished-mode\b/);
+  assert.match(homeHtml, /<div id="publisherDock" class="hidden\b/);
+  assert.match(homeHtml, /property="og:image" content="https:\/\/shop-driftco\.vercel\.app\/share-preview\.jpg\?v=2"/);
+  assert.match(homeHtml, /name="twitter:image" content="https:\/\/shop-driftco\.vercel\.app\/share-preview\.jpg\?v=2"/);
   assert.match(html, /property="og:url" content="https:\/\/shop-driftco\.vercel\.app\/share-v2\/"/);
-  assert.match(html, /property="og:image" content="https:\/\/shop-driftco\.vercel\.app\/share-preview\.jpg"/);
+  assert.match(html, /property="og:image" content="https:\/\/shop-driftco\.vercel\.app\/share-preview\.jpg\?v=2"/);
   assert.match(html, /property="og:image:width" content="1200"/);
   assert.match(html, /property="og:image:height" content="630"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
@@ -362,7 +367,7 @@ test('orders are stored, use saved notification settings, and appear in Studio s
       phone: '09170000000',
       address: 'Manila',
       deliveryQuoteToken: (await createDeliveryQuote()).deliveryToken,
-      items: [{ name: 'Test Fragrance', price: 450, qty: 1, volume: '50ml' }],
+      items: [{ name: 'Test Fragrance', price: 550, qty: 1, volume: '50ml' }],
       total: 1,
     },
   }, orderResponse);
@@ -381,10 +386,10 @@ test('orders are stored, use saved notification settings, and appear in Studio s
   assert.equal(orders.length, 1);
   assert.equal(orders[0].customerName, 'Test Customer');
   assert.equal(orders[0].address, 'Pila, Laguna, Philippines');
-  assert.equal(orders[0].subtotal, 450);
+  assert.equal(orders[0].subtotal, 550);
   assert.equal(orders[0].deliveryFee, 85);
   assert.equal(orders[0].deliveryDistanceKm, 5);
-  assert.equal(orders[0].total, 535);
+  assert.equal(orders[0].total, 635);
 
   const statusResponse = responseRecorder();
   await orderStatusHandler({
@@ -430,11 +435,11 @@ test('orders are stored, use saved notification settings, and appear in Studio s
 
   const statsResponse = responseRecorder();
   await statsHandler({ method: 'GET' }, statsResponse);
-  assert.deepEqual(statsResponse.body.stats, { totalOrders: 1, totalRevenue: 535, totalInquiries: 0 });
+  assert.deepEqual(statsResponse.body.stats, { totalOrders: 1, totalRevenue: 635, totalInquiries: 0 });
 });
 
 test('manual-shipping orders show provisional subtotals, do not count as revenue, and cannot use QR Ph', async () => {
-  const items = [{ name: '50ml fragrance', volume: '50ml', price: 450, qty: 13 }];
+  const items = [{ name: '50ml fragrance', volume: '50ml', price: 550, qty: 13 }];
   const deliveryQuoteToken = (await createDeliveryQuote(items)).deliveryToken;
   const qrResponse = responseRecorder();
   await ordersHandler({
@@ -462,15 +467,15 @@ test('manual-shipping orders show provisional subtotals, do not count as revenue
     },
   }, orderResponse);
   assert.equal(orderResponse.statusCode, 201);
-  assert.equal(orderResponse.body.order.subtotal, 5850);
-  assert.equal(orderResponse.body.order.total, 5850);
+  assert.equal(orderResponse.body.order.subtotal, 7150);
+  assert.equal(orderResponse.body.order.total, 7150);
   assert.equal(orderResponse.body.order.deliveryFee, 0);
   assert.equal(orderResponse.body.order.shippingConfirmationRequired, true);
   assert.match(notifications.filter(call => call.url === 'https://ntfy.sh/my-store-orders').at(-1).body, /authenticated Studio dashboard/i);
 
   const statsResponse = responseRecorder();
   await statsHandler({ method: 'GET' }, statsResponse);
-  assert.equal(statsResponse.body.stats.totalRevenue, 535);
+  assert.equal(statsResponse.body.stats.totalRevenue, 635);
 });
 
 test('PayMongo stays disabled unless its explicit feature flag is enabled', async () => {
@@ -492,7 +497,7 @@ test('PayMongo stays disabled unless its explicit feature flag is enabled', asyn
         phone: '09170000002',
         paymentMethod: 'QR Ph',
         deliveryQuoteToken: (await createDeliveryQuote()).deliveryToken,
-        items: [{ name: 'Test Fragrance', price: 450, qty: 1, volume: '50ml' }],
+        items: [{ name: 'Test Fragrance', price: 550, qty: 1, volume: '50ml' }],
       },
     }, orderResponse);
     assert.equal(orderResponse.statusCode, 503);
@@ -513,22 +518,22 @@ test('QR Ph orders get a unique PayMongo QR when the disabled feature is explici
       address: 'Manila',
       deliveryQuoteToken: (await createDeliveryQuote()).deliveryToken,
       paymentMethod: 'QR Ph',
-      items: [{ name: '50ml fragrance', volume: '50ml', price: 450, qty: 1 }],
+      items: [{ name: '50ml fragrance', volume: '50ml', price: 550, qty: 1 }],
       total: 1,
     },
   }, orderResponse);
 
   assert.equal(orderResponse.statusCode, 201);
-  assert.equal(orderResponse.body.order.total, 535);
+  assert.equal(orderResponse.body.order.total, 635);
   assert.equal(orderResponse.body.order.deliveryFee, 85);
   assert.equal(orderResponse.body.order.paymentStatus, 'Pending');
   assert.match(orderResponse.body.order.paymentIntentId, /^pi_test_/);
   assert.match(orderResponse.body.payment.qrCodeDataUrl, /^data:image\/png;base64,/);
-  assert.equal(paymongoIntents.get(orderResponse.body.order.paymentIntentId).amount, 53500);
+  assert.equal(paymongoIntents.get(orderResponse.body.order.paymentIntentId).amount, 63500);
 
   const pendingStats = responseRecorder();
   await statsHandler({ method: 'GET' }, pendingStats);
-  assert.equal(pendingStats.body.stats.totalRevenue, 535);
+  assert.equal(pendingStats.body.stats.totalRevenue, 635);
 
   const deniedStatus = responseRecorder();
   await orderStatusHandler({
@@ -542,7 +547,7 @@ test('QR Ph orders get a unique PayMongo QR when the disabled feature is explici
 });
 
 test('pickup orders need no delivery quote, ignore client address details, and track as pickup', async () => {
-  const items = [{ name: 'Test Fragrance', price: 450, qty: 1, volume: '50ml' }];
+  const items = [{ name: 'Test Fragrance', price: 550, qty: 1, volume: '50ml' }];
   const orderResponse = responseRecorder();
   await ordersHandler({
     method: 'POST',
@@ -563,7 +568,7 @@ test('pickup orders need no delivery quote, ignore client address details, and t
   assert.equal(orderResponse.body.order.shippingOrigin, PICKUP_LOCATION);
   assert.equal(orderResponse.body.order.deliveryFee, 0);
   assert.equal(orderResponse.body.order.shippingConfirmationRequired, false);
-  assert.equal(orderResponse.body.order.total, 450);
+  assert.equal(orderResponse.body.order.total, 550);
 
   const trackingResponse = responseRecorder();
   await orderTrackingHandler({

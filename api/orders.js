@@ -24,7 +24,7 @@ function respondWithError(res, error) {
 
 function calculateQrPhTotal(items) {
   return items.reduce((sum, item) => {
-    const priceByVolume = { '40ml': 380, '50ml': 450 };
+    const priceByVolume = { '40ml': 380, '50ml': 550 };
     const price = priceByVolume[item?.volume];
     const quantity = Number(item?.qty);
     if (!price || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100) {

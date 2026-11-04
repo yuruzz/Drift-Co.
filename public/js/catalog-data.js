@@ -1,7 +1,7 @@
 // Drift & Co. — Official Fragrance Catalog Data
 // 30% Fragrance Oil, US & Germany imported formulations
 // Alphabetically ordered (A to Z)
-// Sizes: 40ml (₱380.00) & 50ml (₱450.00)
+// Sizes: 40ml (₱380.00) & 50ml (₱550.00)
 
 const STANDARD_PERFUME_SIZES = [
     { volume: "40ml", price: 380 },
@@ -329,4 +329,3 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { products, STANDARD_PERFUME_SIZES, defaultProductImages };
 }
-

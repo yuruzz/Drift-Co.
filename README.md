@@ -50,8 +50,17 @@ Notification channels such as Telegram, Semaphore, Twilio, and webhooks are conf
 
 For ntfy order alerts, subscribe to the same topic in the ntfy app and enter either the topic name or its `https://ntfy.sh/<topic>` URL in Studio Mode. Use **Send Test Alert** to verify delivery.
 
-For sharing the catalog in Messenger or Discord, use `https://drift-co.vercel.app/share-v2/`. This page has a fresh canonical URL and social preview metadata, then redirects visitors to the catalog. Its share image is a clean 1200×630 JPEG for chat-app link previews.
+For sharing the catalog in Messenger or Discord, use `https://shop-driftco.vercel.app/share-v2/`. This page has social preview metadata and redirects visitors to the catalog. Its share image is a clean 1200×630 JPEG for chat-app link previews.
 
 ## Google Search indexing
 
-The storefront includes a canonical URL, search metadata, structured organization and website data, and a sitemap at `https://drift-co.vercel.app/sitemap.xml`. After deploying, add and verify the site in [Google Search Console](https://search.google.com/search-console), submit the sitemap, and use URL Inspection to request indexing for `https://drift-co.vercel.app/`. Crawling and indexing are controlled by Google and are not guaranteed or immediate.
+The production build generates a crawlable page for every product in `public/js/catalog-data.js`, six fragrance-family collection pages, seven reviewed fragrance-journal articles, a perfume-reseller business page, matching Product/Offer and collection/article structured data, and an XML sitemap. Product routes include pages such as `/products/baccarat-rouge-inspired-perfume/` and `/products/polo-sport-inspired-perfume/`; the partner page is `/pages/perfume-reseller-philippines/`. The build also refreshes `public/sitemap.xml` from the catalog.
+
+After deploying to `https://shop-driftco.vercel.app/`:
+
+1. Open [Google Search Console](https://search.google.com/search-console) and add the `shop-driftco.vercel.app` Domain property.
+2. Verify ownership by adding the DNS TXT record Google provides to the domain's DNS host.
+3. In Search Console, open **Sitemaps** and submit `https://shop-driftco.vercel.app/sitemap.xml`.
+4. Use **URL Inspection** to test the homepage and a product URL, then request indexing if Google reports the pages are available.
+
+The site publishes an indexable `robots.txt` sitemap reference and a branded 404 page; unknown routes are no longer rewritten to the homepage. Crawling, rich-result eligibility, and indexing are controlled by Google and are not guaranteed or immediate. Validate structured data with Google's Rich Results Test after deployment.
