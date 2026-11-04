@@ -15,14 +15,6 @@
       "destination": "/api/notifications/settings.js"
     },
     {
-      "source": "/api/notifications/test",
-      "destination": "/api/notifications/test.js"
-    },
-    {
-      "source": "/api/site-images/reset",
-      "destination": "/api/site-images-reset.js"
-    },
-    {
       "source": "/api/site-images",
       "destination": "/api/site-images.js"
     },

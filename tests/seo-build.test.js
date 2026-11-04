@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +35,19 @@ test('build emits indexable sitemap URLs and blocks no important routes', async 
   assert.match(home, /<a[^>]+href="\/products\/baccarat-rouge-inspired-perfume\/"/);
   assert.match(home, /href="\/journal\/choose-long-lasting-perfume-philippines\/"/);
   assert.match(home, /href="\/pages\/perfume-reseller-philippines\/"/);
+});
+
+test('deployment stays within the Vercel Hobby serverless function limit', async () => {
+  const countFunctions = async directory => {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const counts = await Promise.all(entries.map(entry => {
+      const entryPath = path.join(directory, entry.name);
+      return entry.isDirectory() ? countFunctions(entryPath) : Number(entry.isFile() && entry.name.endsWith('.js'));
+    }));
+    return counts.reduce((total, count) => total + count, 0);
+  };
+
+  assert.equal(await countFunctions(path.join(ROOT, 'api')) <= 12, true);
 });
 
 test('reseller landing page has unique metadata and accurate package details', async () => {

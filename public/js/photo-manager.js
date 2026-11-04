@@ -552,10 +552,10 @@
 
             saveSiteImages(siteData);
 
-            fetch('/api/site-images/reset', {
+            fetch('/api/site-images', {
                 method: 'POST',
                 headers: photoManagerApiHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({ target })
+                body: JSON.stringify({ action: 'reset', target })
             }).catch(() => {});
 
             showToast('Photo restored to default');
@@ -568,10 +568,10 @@
             localStorage.removeItem(SITE_STORAGE_KEY);
             localStorage.removeItem('drift_custom_perfume_images');
 
-            fetch('/api/site-images/reset', {
+            fetch('/api/site-images', {
                 method: 'POST',
                 headers: photoManagerApiHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({ target: 'all' })
+                body: JSON.stringify({ action: 'reset', target: 'all' })
             }).catch(() => {});
 
             applyAllCustomImages();

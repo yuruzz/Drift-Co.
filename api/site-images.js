@@ -1,5 +1,5 @@
 import { requireStudioAccess } from '../lib/studio-auth.js';
-import { getSiteImages, saveSiteImageChanges } from '../lib/site-images.js';
+import { getSiteImages, resetSiteImages, saveSiteImageChanges } from '../lib/site-images.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,12 +14,18 @@ export default async function handler(req, res) {
   if (req.method === 'POST' && !requireStudioAccess(req, res)) return;
 
   try {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    const isReset = req.method === 'POST' && body.action === 'reset';
     const siteImages = req.method === 'GET'
       ? await getSiteImages()
-      : await saveSiteImageChanges(req.body);
+      : isReset
+        ? await resetSiteImages(body)
+        : await saveSiteImageChanges(body);
     return res.status(200).json({
       success: true,
-      ...(req.method === 'POST' ? { message: 'Images saved permanently in database!' } : {}),
+      ...(req.method === 'POST'
+        ? { message: isReset ? 'Image reset successfully.' : 'Images saved permanently in database!' }
+        : {}),
       siteImages,
     });
   } catch (error) {

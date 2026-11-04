@@ -1,4 +1,4 @@
-import { defaultSettings, normalizeNtfyTopic, publicSettings } from '../../lib/notifications.js';
+import { defaultSettings, normalizeNtfyTopic, publicSettings, sendTestNotification } from '../../lib/notifications.js';
 import { redisCommand } from '../../lib/redis.js';
 import { requireStudioAccess } from '../../lib/studio-auth.js';
 
@@ -57,8 +57,13 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (!requireStudioAccess(req, res)) return;
-      const current = await readSettings();
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      if (body.action === 'test') {
+        const logs = await sendTestNotification(await readSettings());
+        return res.status(200).json({ success: true, message: 'Test notification completed.', logs });
+      }
+
+      const current = await readSettings();
       const settings = normalizeSettings(current, body);
       await redisCommand('SET', SETTINGS_KEY, JSON.stringify(settings));
       return res.status(200).json({

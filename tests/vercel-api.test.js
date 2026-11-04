@@ -23,7 +23,6 @@ const { default: orderStatusHandler } = await import('../lib/order-status.js');
 const { default: statsHandler } = await import('../api/stats.js');
 const { default: paymentSettingsHandler } = await import('../api/payments-settings.js');
 const { default: siteImagesHandler } = await import('../api/site-images.js');
-const { default: siteImagesResetHandler } = await import('../api/site-images-reset.js');
 const { default: studioAuthHandler } = await import('../api/studio-auth.js');
 const { default: orderTrackingHandler } = await import('../lib/order-tracking.js');
 const { paymongoQrPhReady, verifyPaymongoWebhook } = await import('../lib/paymongo.js');
@@ -223,6 +222,26 @@ test('notification settings persist in Redis without returning secrets', async (
   assert.equal(JSON.parse(values.get('drift:notification-settings')).telegramBotToken, 'secret-bot-token');
 });
 
+test('notification test action uses the settings function and requires Studio access', async () => {
+  const unauthorizedResponse = responseRecorder();
+  await settingsHandler({
+    method: 'POST',
+    headers: {},
+    body: { action: 'test' },
+  }, unauthorizedResponse);
+  assert.equal(unauthorizedResponse.statusCode, 401);
+
+  const testResponse = responseRecorder();
+  await settingsHandler({
+    method: 'POST',
+    headers: { 'x-studio-pin': studioPin },
+    body: { action: 'test' },
+  }, testResponse);
+  assert.equal(testResponse.statusCode, 200);
+  assert.equal(testResponse.body.success, true);
+  assert.equal(Array.isArray(testResponse.body.logs), true);
+});
+
 test('ntfy topics accept names or ntfy.sh URLs and reject unrelated URLs', () => {
   assert.equal(normalizeNtfyTopic('my-store-orders'), 'my-store-orders');
   assert.equal(normalizeNtfyTopic('https://ntfy.sh/my-store-orders'), 'my-store-orders');
@@ -376,10 +395,10 @@ test('site image APIs persist custom images in Redis and require Studio access f
   assert.equal(saveResponse.body.siteImages.hero, 'data:image/jpeg;base64,Zm9v');
 
   const resetResponse = responseRecorder();
-  await siteImagesResetHandler({
+  await siteImagesHandler({
     method: 'POST',
     headers: { 'x-studio-pin': studioPin },
-    body: { target: 'hero' },
+    body: { action: 'reset', target: 'hero' },
   }, resetResponse);
   assert.equal(resetResponse.statusCode, 200);
   assert.equal(resetResponse.body.siteImages.hero, null);

@@ -556,7 +556,11 @@
             if (btn) btn.innerHTML = `<span>Sending...</span>`;
 
             try {
-                const res = await fetch('/api/notifications/test', { method: 'POST', headers: studioApiHeaders() });
+                const res = await fetch('/api/notifications/settings', {
+                    method: 'POST',
+                    headers: studioApiHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ action: 'test' })
+                });
                 const data = await res.json();
                 if (data.success) {
                     const ntfy = (data.logs || []).find(log => log.channel.startsWith('Instant Phone Alert'));
