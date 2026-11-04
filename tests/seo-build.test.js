@@ -114,6 +114,44 @@ test('journal and collection pages have unique metadata, canonical URLs, and str
   }
 });
 
+test('homepage fragrance journal uses a featured editorial and compact article list', async () => {
+  const [home, sourceHome, styles] = await Promise.all([
+    readDist('index.html'),
+    readFile(path.join(ROOT, 'index.html'), 'utf8'),
+    readFile(path.join(ROOT, 'public', 'css', 'style.css'), 'utf8')
+  ]);
+  const journal = home.match(/<section id="journal"[\s\S]*?<\/section>/)?.[0];
+  const sourceJournal = sourceHome.match(/<section id="journal"[\s\S]*?<\/section>/)?.[0];
+  assert.ok(journal, 'Missing homepage journal section');
+  assert.ok(sourceJournal, 'Missing source homepage journal section');
+  assert.match(journal, /THE FRAGRANCE JOURNAL/i);
+  assert.match(journal, /<h2[^>]*>The Art of Fragrance<\/h2>/);
+  assert.match(journal, /class="journal-feature"/);
+  assert.match(journal, /class="journal-list"/);
+  assert.match(journal, /src="\/share-preview\.jpg" alt="Drift &amp; Co\. fragrances arranged among greenery"/);
+  assert.equal(new Set([...journal.matchAll(/href="(\/journal\/[^"]+\/)"/g)].map(([, url]) => url)).size, 7);
+  assert.match(sourceJournal, /class="journal-feature"/);
+  assert.match(sourceJournal, /class="journal-list"/);
+  assert.equal(new Set([...sourceJournal.matchAll(/href="(\/journal\/[^"]+\/)"/g)].map(([, url]) => url)).size, 7);
+  assert.doesNotMatch(sourceJournal, /SEO_JOURNAL_LINKS|drift-section-reveal|drift-stagger-item/);
+  assert.match(styles, /\.journal-feature\s*\{[\s\S]*?grid-template-columns/);
+  assert.match(styles, /@media \(max-width: 767px\)\s*\{[\s\S]*?\.journal-list\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test('homepage places the journal after the fragrance finder and business partners before tracking', async () => {
+  const home = await readDist('index.html');
+  const sectionPositions = [
+    '<section id="scent-finder"',
+    '<section id="journal"',
+    '<section id="craftsmanship"',
+    '<section id="testimonials"',
+    '<section id="partner"',
+    '<section id="track-order-section"'
+  ].map(section => home.indexOf(section));
+  assert.equal(sectionPositions.every(position => position >= 0), true);
+  assert.deepEqual(sectionPositions, [...sectionPositions].sort((a, b) => a - b));
+});
+
 test('storefront uses compressed, dimensioned WebP product images and a real 404 page', async () => {
   const [home, catalogScript, notFound] = await Promise.all([
     readDist('index.html'),
@@ -132,4 +170,8 @@ test('storefront uses compressed, dimensioned WebP product images and a real 404
   assert.match(notFound, /name="robots" content="noindex, follow"/);
   assert.equal(path.join(DIST, '404.html') !== path.join(DIST, 'index.html'), true);
   assert.doesNotMatch(vercel, /"source"\s*:\s*"\/\(\.\*\)"/);
+
+  const editorialSource = await stat(path.join(ROOT, 'public', 'share-preview.jpg'));
+  const editorialWebp = await stat(path.join(DIST, 'share-preview.webp'));
+  assert.ok(editorialWebp.size < editorialSource.size, 'Editorial WebP should be smaller than its JPEG source');
 });

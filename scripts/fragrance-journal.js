@@ -2,7 +2,8 @@ export const fragranceJournal = [
   {
     slug: 'choose-long-lasting-perfume-philippines',
     title: 'How to Choose a Long-Lasting Perfume in the Philippines',
-    description: 'Learn what to compare when choosing a long-lasting perfume in the Philippines, from fragrance concentration to scent family and wear testing.',
+    category: 'Choosing Well',
+    description: 'Compare concentration, scent profile, and wear tests before choosing a fragrance for life in the Philippines.',
     introduction: 'A perfume that lasts well for one person may wear differently on someone else. Use concentration, scent profile, and a real wear test to make a considered choice instead of relying on a single promise.',
     sections: [
       {
@@ -32,7 +33,8 @@ export const fragranceJournal = [
   {
     slug: 'eau-de-parfum-vs-eau-de-toilette',
     title: 'Eau de Parfum vs Eau de Toilette: What Is the Difference?',
-    description: 'Understand the usual difference between Eau de Parfum and Eau de Toilette, why concentration ranges vary, and what to compare before buying.',
+    category: 'Fragrance Basics',
+    description: 'What the EDP and EDT labels tell you, how formulas differ, and which details matter beyond concentration.',
     introduction: 'Eau de Parfum and Eau de Toilette are fragrance concentration labels. They can help you compare products, but the terms do not promise a specific wear time or smell.',
     sections: [
       {
@@ -61,7 +63,8 @@ export const fragranceJournal = [
   {
     slug: 'fragrance-families-everyday-wear',
     title: 'A Guide to Fragrance Families for Everyday Wear',
-    description: 'Explore citrus, aromatic, woody, floral, fruity, and vanilla fragrance families and find notes to guide your next perfume choice.',
+    category: 'Scent Families',
+    description: 'From bright citrus and aromatic herbs to woods and florals, learn how scent families can guide a daily-wear shortlist.',
     introduction: 'Fragrance families are a simple way to describe a scent’s character. They are helpful for browsing, but a perfume can combine several styles and note lists are not a substitute for trying it.',
     sections: [
       {
@@ -100,7 +103,8 @@ export const fragranceJournal = [
   {
     slug: 'perfume-in-tropical-weather',
     title: 'How to Wear Perfume in Tropical Weather',
-    description: 'Practical ways to apply and store perfume in warm, humid weather, including tips for choosing a scent and avoiding over-application.',
+    category: 'Wearing Fragrance',
+    description: 'Simple application and storage advice for warm, humid days, with room for personal taste and a light hand.',
     introduction: 'Warm, humid weather can change how fragrance feels to you during the day. A few simple habits can help you wear perfume comfortably without assuming every scent behaves the same.',
     sections: [
       {
@@ -130,7 +134,8 @@ export const fragranceJournal = [
   {
     slug: 'understanding-top-heart-base-notes',
     title: 'Understanding Top, Heart, and Base Notes in Perfume',
-    description: 'A clear guide to top, heart, and base notes, how note pyramids describe a fragrance, and how to use them when comparing perfumes.',
+    category: 'Fragrance Notes',
+    description: 'A concise guide to reading a fragrance from its first impression through its heart and deeper base notes.',
     introduction: 'Many perfume descriptions group notes into top, heart, and base. This pyramid is a guide to the composition and its development, not a strict timetable or a promise that every wearer will notice each note in the same way.',
     sections: [
       {
@@ -164,7 +169,8 @@ export const fragranceJournal = [
   {
     slug: 'choose-perfume-as-a-gift',
     title: 'How to Choose a Perfume as a Gift',
-    description: 'A thoughtful perfume gift guide: consider the recipient’s scent preferences, fragrance family, bottle size, and budget before choosing.',
+    category: 'The Gift Edit',
+    description: 'Narrow a fragrance gift by the scents they already enjoy, available bottle sizes, and your budget.',
     introduction: 'Perfume is personal, so the best gift starts with what the recipient already enjoys. A little observation can help you choose a fragrance they are more likely to wear.',
     sections: [
       {
@@ -197,7 +203,8 @@ export const fragranceJournal = [
   {
     slug: 'fresh-woody-sweet-fragrances',
     title: 'Fresh vs Woody vs Sweet Fragrances: Which Should You Choose?',
-    description: 'Compare fresh, woody, and sweet perfume profiles using published fragrance notes to find a scent family that matches your preferences.',
+    category: 'Find Your Profile',
+    description: 'Compare fresh, woody, and sweet profiles through their notes, then choose the one that feels most like you.',
     introduction: 'Fresh, woody, and sweet are broad descriptions, not rigid formulas. Use the notes and product descriptions to compare the character of individual fragrances.',
     sections: [
       {

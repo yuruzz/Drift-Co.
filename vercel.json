@@ -19,6 +19,14 @@
       "destination": "/api/notifications/test.js"
     },
     {
+      "source": "/api/site-images/reset",
+      "destination": "/api/site-images-reset.js"
+    },
+    {
+      "source": "/api/site-images",
+      "destination": "/api/site-images.js"
+    },
+    {
       "source": "/api/studio/auth",
       "destination": "/api/studio-auth.js"
     },

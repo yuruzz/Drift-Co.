@@ -342,13 +342,9 @@ function staticProductLinks(products) {
   return products.map(product => `<article class="bg-white border border-[#E8E2D8] rounded-sm p-5"><h3 class="font-cormorant text-xl"><a class="hover:text-[#9E7D3B]" href="${escapeHtml(productUrl(product))}">${escapeHtml(product.name)} Eau de Parfum</a></h3><p class="text-sm text-stone-600 mt-2">${escapeHtml(compactDescription(product.description, 145))}</p><p class="text-[11px] uppercase tracking-wider text-[#9E7D3B] mt-3">40ml ₱380 · 50ml ₱550</p></article>`).join('\n');
 }
 
-function staticJournalLinks() {
-  return fragranceJournal.map(article => `<article class="bg-white border border-[#E8E2D8] rounded-sm p-6"><h3 class="font-cormorant text-2xl"><a class="hover:text-[#9E7D3B]" href="/journal/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a></h3><p class="text-sm text-stone-600 mt-3">${escapeHtml(article.description)}</p><a class="inline-block mt-4 text-xs uppercase tracking-widest text-[#9E7D3B]" href="/journal/${escapeHtml(article.slug)}/">Read the guide</a></article>`).join('\n');
-}
-
 async function optimizeImage(imagePath, outDir) {
   const sourcePath = path.join(ROOT, 'public', imagePath.replace(/^\//, ''));
-  const outputPath = path.join(outDir, imagePath.replace(/\.jfif$/i, '.webp').replace(/^\//, ''));
+  const outputPath = path.join(outDir, imagePath.replace(/\.(?:jfif|jpe?g)$/i, '.webp').replace(/^\//, ''));
   await mkdir(path.dirname(outputPath), { recursive: true });
   await sharp(sourcePath)
     .resize({ width: 1000, withoutEnlargement: true })
@@ -393,13 +389,10 @@ export async function generateSeoPages(outDir = path.join(ROOT, 'dist')) {
   const indexPath = path.join(outDir, 'index.html');
   let homeHtml = await readFile(indexPath, 'utf8');
   const productMarker = '<!-- SEO_CATALOG_LINKS -->';
-  const journalMarker = '<!-- SEO_JOURNAL_LINKS -->';
-  if (!homeHtml.includes(productMarker) || !homeHtml.includes(journalMarker)) {
-    throw new Error('Homepage SEO link placeholders are missing.');
+  if (!homeHtml.includes(productMarker)) {
+    throw new Error('Homepage product link placeholder is missing.');
   }
-  homeHtml = homeHtml
-    .replace(productMarker, staticProductLinks(products))
-    .replace(journalMarker, staticJournalLinks());
+  homeHtml = homeHtml.replace(productMarker, staticProductLinks(products));
   await writeFile(indexPath, homeHtml);
 
   const imagePaths = new Set([
@@ -407,7 +400,10 @@ export async function generateSeoPages(outDir = path.join(ROOT, 'dist')) {
     '/hero.jfif',
     '/partner.jfif'
   ]);
-  await Promise.all([...imagePaths].map(imagePath => optimizeImage(imagePath, outDir)));
+  await Promise.all([
+    ...[...imagePaths].map(imagePath => optimizeImage(imagePath, outDir)),
+    optimizeImage('/share-preview.jpg', outDir)
+  ]);
 
   const catalogScriptPath = path.join(outDir, 'js', 'catalog-data.js');
   let catalogScript = await readFile(catalogScriptPath, 'utf8');

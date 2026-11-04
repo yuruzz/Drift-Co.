@@ -22,6 +22,8 @@ const { default: inquiriesHandler } = await import('../api/partner-inquiries.js'
 const { default: orderStatusHandler } = await import('../lib/order-status.js');
 const { default: statsHandler } = await import('../api/stats.js');
 const { default: paymentSettingsHandler } = await import('../api/payments-settings.js');
+const { default: siteImagesHandler } = await import('../api/site-images.js');
+const { default: siteImagesResetHandler } = await import('../api/site-images-reset.js');
 const { default: studioAuthHandler } = await import('../api/studio-auth.js');
 const { default: orderTrackingHandler } = await import('../lib/order-tracking.js');
 const { paymongoQrPhReady, verifyPaymongoWebhook } = await import('../lib/paymongo.js');
@@ -341,6 +343,64 @@ test('weight tiers, Starter Kit handling, and nearest dispatch office are verifi
   } finally {
     osrmDistances = [[5000], [6000]];
   }
+});
+
+test('site image APIs persist custom images in Redis and require Studio access for changes', async () => {
+  values.delete('drift:site-images');
+
+  const getResponse = responseRecorder();
+  await siteImagesHandler({ method: 'GET', headers: {} }, getResponse);
+  assert.equal(getResponse.statusCode, 200);
+  assert.deepEqual(getResponse.body.siteImages, {
+    hero: null,
+    partner: null,
+    favicon: null,
+    products: {},
+  });
+
+  const unauthorizedResponse = responseRecorder();
+  await siteImagesHandler({
+    method: 'POST',
+    headers: {},
+    body: { target: 'hero', image: 'data:image/jpeg;base64,Zm9v' },
+  }, unauthorizedResponse);
+  assert.equal(unauthorizedResponse.statusCode, 401);
+
+  const saveResponse = responseRecorder();
+  await siteImagesHandler({
+    method: 'POST',
+    headers: { 'x-studio-pin': studioPin },
+    body: { target: 'hero', image: 'data:image/jpeg;base64,Zm9v' },
+  }, saveResponse);
+  assert.equal(saveResponse.statusCode, 200);
+  assert.equal(saveResponse.body.siteImages.hero, 'data:image/jpeg;base64,Zm9v');
+
+  const resetResponse = responseRecorder();
+  await siteImagesResetHandler({
+    method: 'POST',
+    headers: { 'x-studio-pin': studioPin },
+    body: { target: 'hero' },
+  }, resetResponse);
+  assert.equal(resetResponse.statusCode, 200);
+  assert.equal(resetResponse.body.siteImages.hero, null);
+});
+
+test('site image APIs reject unknown targets and non-image values', async () => {
+  const invalidTarget = responseRecorder();
+  await siteImagesHandler({
+    method: 'POST',
+    headers: { 'x-studio-pin': studioPin },
+    body: { target: 'unexpected', image: 'data:image/jpeg;base64,Zm9v' },
+  }, invalidTarget);
+  assert.equal(invalidTarget.statusCode, 400);
+
+  const invalidImage = responseRecorder();
+  await siteImagesHandler({
+    method: 'POST',
+    headers: { 'x-studio-pin': studioPin },
+    body: { target: 'hero', image: '<!DOCTYPE html>' },
+  }, invalidImage);
+  assert.equal(invalidImage.statusCode, 400);
 });
 
 test('site share pages use a versioned public preview image', async () => {
