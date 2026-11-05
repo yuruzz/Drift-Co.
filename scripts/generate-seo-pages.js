@@ -117,6 +117,98 @@ function jsonLd(data) {
   return JSON.stringify(data).replace(/</g, '\\u003c');
 }
 
+function gaTrackingScript() {
+  return `<script async src="https://www.googletagmanager.com/gtag/js?id=G-67XNHSREQK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function() {
+    window.dataLayer.push(Array.from(arguments));
+  };
+  window.gtag('js', new Date());
+  window.gtag('config', 'G-67XNHSREQK', { send_page_view: true, anonymize_ip: true });
+  window.driftGa4 = window.driftGa4 || {
+    push: function(name, payload) {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, payload || {});
+      }
+    },
+    trackViewItem: function(item) {
+      const details = item || {};
+      const price = Number(details.price || 0);
+      this.push('view_item', {
+        currency: details.currency || 'PHP',
+        value: Number.isFinite(price) ? price : 0,
+        items: [{
+          item_id: details.id || details.sku || details.name || 'drift-product',
+          item_name: details.name || 'Drift & Co. fragrance',
+          item_category: details.category || 'Fragrance',
+          item_variant: details.variant || details.volume || '',
+          item_brand: 'Drift & Co.',
+          price: Number.isFinite(price) ? price : 0,
+          quantity: Number(details.quantity || 1),
+          currency: details.currency || 'PHP'
+        }]
+      });
+    },
+    trackAddToCart: function(item) {
+      const details = item || {};
+      const price = Number(details.price || 0);
+      this.push('add_to_cart', {
+        currency: details.currency || 'PHP',
+        value: Number.isFinite(price) ? price * Number(details.quantity || 1) : 0,
+        items: [{
+          item_id: details.id || details.sku || details.name || 'drift-product',
+          item_name: details.name || 'Drift & Co. fragrance',
+          item_category: details.category || 'Fragrance',
+          item_variant: details.variant || details.volume || '',
+          item_brand: 'Drift & Co.',
+          price: Number.isFinite(price) ? price : 0,
+          quantity: Number(details.quantity || 1),
+          currency: details.currency || 'PHP'
+        }]
+      });
+    },
+    trackBeginCheckout: function(payload) {
+      const items = Array.isArray(payload && payload.items) ? payload.items : [];
+      const total = Number(payload && payload.value != null ? payload.value : items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0));
+      this.push('begin_checkout', {
+        currency: payload && payload.currency ? payload.currency : 'PHP',
+        value: Number.isFinite(total) ? total : 0,
+        items: items.map(item => ({
+          item_id: item.id || item.sku || item.name || 'drift-product',
+          item_name: item.name || 'Drift & Co. fragrance',
+          item_category: item.category || 'Fragrance',
+          item_variant: item.variant || item.volume || '',
+          item_brand: 'Drift & Co.',
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1),
+          currency: payload && payload.currency ? payload.currency : 'PHP'
+        }))
+      });
+    },
+    trackPurchase: function(payload) {
+      const items = Array.isArray(payload && payload.items) ? payload.items : [];
+      const total = Number(payload && payload.value != null ? payload.value : items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0));
+      this.push('purchase', {
+        transaction_id: payload && payload.transaction_id ? payload.transaction_id : 'drift-order',
+        currency: payload && payload.currency ? payload.currency : 'PHP',
+        value: Number.isFinite(total) ? total : 0,
+        items: items.map(item => ({
+          item_id: item.id || item.sku || item.name || 'drift-product',
+          item_name: item.name || 'Drift & Co. fragrance',
+          item_category: item.category || 'Fragrance',
+          item_variant: item.variant || item.volume || '',
+          item_brand: 'Drift & Co.',
+          price: Number(item.price || 0),
+          quantity: Number(item.quantity || 1),
+          currency: payload && payload.currency ? payload.currency : 'PHP'
+        }))
+      });
+    }
+  };
+</script>`;
+}
+
 function pageHead({ title, description, canonical, image, structuredData, type = 'website' }) {
   const absoluteImage = image ? `${SITE_URL}${image}` : `${SITE_URL}/share-preview.jpg`;
   return `<!doctype html>
@@ -150,6 +242,7 @@ function pageHead({ title, description, canonical, image, structuredData, type =
     :root{color-scheme:light;--ink:#1a1817;--paper:#faf8f5;--sand:#f3eee7;--gold:#9e7d3b;--line:#e8e2d8;--muted:#736e68;font-family:"Plus Jakarta Sans",Arial,sans-serif;color:var(--ink);background:var(--paper)}
     *{box-sizing:border-box}body{margin:0;line-height:1.65}a{color:inherit}a:hover{color:var(--gold)}.site-header{border-bottom:1px solid var(--line);background:var(--paper)}.nav{max-width:1120px;margin:auto;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:20px}.brand{font-family:"Cormorant Garamond",Georgia,serif;font-size:26px;letter-spacing:.12em;text-decoration:none}.nav-links{display:flex;gap:22px;flex-wrap:wrap;font-size:12px}.nav-links a{color:var(--muted);text-decoration:none}.page{max-width:1120px;margin:0 auto;padding:32px 24px 80px}.breadcrumbs{font-size:12px;color:var(--muted);margin:0 0 28px}.breadcrumbs a{color:var(--gold)}h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:400;line-height:1.15}h1{font-size:clamp(38px,6vw,64px);margin:0 0 18px}h2{font-size:32px;margin:42px 0 12px}h3{font-size:23px;margin:0 0 8px}.lede{font-size:18px;color:#514b45;max-width:720px}.product{display:grid;grid-template-columns:minmax(0, .9fr) minmax(0,1.1fr);gap:56px;align-items:start}.product-image{width:100%;height:auto;max-height:720px;object-fit:cover;background:var(--sand);border:1px solid var(--line)}.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600}.facts{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.tag{border:1px solid var(--line);padding:5px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:26px 0}.note{border-top:1px solid var(--line);padding-top:12px;font-size:13px}.note strong{display:block;color:var(--gold);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}.shop-form{display:flex;align-items:end;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:20px;margin-top:24px}.shop-form label{display:grid;gap:6px;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.shop-form select{min-width:170px;padding:12px;border:1px solid var(--line);background:white;font:inherit}.button{border:0;background:var(--ink);color:white;padding:13px 22px;text-decoration:none;font:600 11px "Plus Jakarta Sans",Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}.button:hover{background:var(--gold);color:white}.text-link{color:var(--gold)}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:24px}.card{background:white;border:1px solid var(--line);padding:20px;text-decoration:none}.card p{font-size:13px;color:var(--muted)}.article{max-width:760px;margin:auto}.article section p{color:#514b45}.site-footer{border-top:1px solid var(--line);padding:24px;text-align:center;color:var(--muted);font-size:12px}.no-js-note{font-size:12px;color:var(--muted)}@media(max-width:720px){.nav{align-items:flex-start;flex-direction:column}.nav-links{gap:12px}.page{padding:24px 18px 56px}.product{grid-template-columns:1fr;gap:28px}.product-image{max-height:560px}.notes{grid-template-columns:1fr}.shop-form{align-items:stretch;flex-direction:column}.shop-form select,.button{width:100%;text-align:center}}
   </style>
+  ${gaTrackingScript()}
   <script type="application/ld+json">${jsonLd(structuredData)}</script>
 </head>`;
 }
@@ -247,6 +340,20 @@ function productPage(product) {
     <section><h2>Explore more fragrances</h2><p>Compare the listed notes and bottle sizes across the Drift &amp; Co. collection.</p><div class="cards"><a class="card" href="/#scent-finder"><h3>Find a fragrance family</h3><p>Use the fragrance finder to browse by scent profile.</p></a><a class="card" href="/pages/perfume-reseller-philippines/"><h3>Perfume reseller Philippines</h3><p>Read about the business partner package and contact Drift &amp; Co.</p></a></div></section>
   </main>
   ${siteFooter()}
+  <script>
+    if (window.driftGa4 && typeof window.driftGa4.trackViewItem === 'function') {
+      window.driftGa4.trackViewItem({
+        id: 'DRIFT-${product.id}',
+        sku: 'DRIFT-${product.id}',
+        name: '${escapeHtml(product.name)} Eau de Parfum',
+        category: '${escapeHtml(category?.title || 'Eau de Parfum')}',
+        price: ${Number(product.sizes[0].price)},
+        quantity: 1,
+        volume: '${escapeHtml(product.sizes[0].volume)}',
+        currency: 'PHP'
+      });
+    }
+  </script>
 </body></html>`;
 }
 

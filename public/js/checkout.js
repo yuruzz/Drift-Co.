@@ -300,6 +300,20 @@ async function selectDeliveryLocation(latitude, longitude) {
             if (typeof syncPaymentMethodDropdown === 'function') syncPaymentMethodDropdown();
             handlePaymentMethodChange();
 
+            if (window.driftGa4 && typeof window.driftGa4.trackBeginCheckout === 'function') {
+                const items = (window.cart || []).map(item => ({
+                    id: `${(item.name || 'drift-product').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${(item.volume || 'item').toLowerCase()}`,
+                    name: item.name,
+                    category: 'Fragrance',
+                    price: Number(item.price || 0),
+                    quantity: Number(item.qty || 1),
+                    volume: item.volume || '',
+                    currency: 'PHP'
+                }));
+                const value = items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+                window.driftGa4.trackBeginCheckout({ currency: 'PHP', value, items });
+            }
+
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 modal.classList.add('opacity-100', 'pointer-events-auto');
@@ -586,6 +600,24 @@ async function selectDeliveryLocation(latitude, longitude) {
 
             // Play sound chime for instant feedback
             playOrderAlertChime();
+
+            if (window.driftGa4 && typeof window.driftGa4.trackPurchase === 'function') {
+                const purchaseItems = (order.items || []).map(item => ({
+                    id: `${(item.name || 'drift-product').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${(item.volume || 'item').toLowerCase()}`,
+                    name: item.name,
+                    category: 'Fragrance',
+                    price: Number(item.price || 0),
+                    quantity: Number(item.qty || item.quantity || 1),
+                    volume: item.volume || '',
+                    currency: 'PHP'
+                }));
+                window.driftGa4.trackPurchase({
+                    transaction_id: order.id,
+                    currency: 'PHP',
+                    value: Number(order.total || 0),
+                    items: purchaseItems
+                });
+            }
 
             // Clear cart
             window.cart = [];

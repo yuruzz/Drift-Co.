@@ -42,6 +42,18 @@ function addToCart(name, price, image, volume = '40ml') {
     } else {
         list.push({ name, price, image, volume, qty: 1 });
     }
+    if (window.driftGa4 && typeof window.driftGa4.trackAddToCart === 'function') {
+        const item = list.find(item => item.name === name && item.volume === volume);
+        window.driftGa4.trackAddToCart({
+            id: `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${volume.toLowerCase()}`,
+            name,
+            price: Number(price || 0),
+            quantity: item ? item.qty : 1,
+            volume,
+            category: 'Fragrance',
+            currency: 'PHP'
+        });
+    }
     updateCartUI();
     openCart();
 }
